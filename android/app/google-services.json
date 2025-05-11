@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "644716286828",
+    "project_id": "clica-c4bfc",
+    "storage_bucket": "clica-c4bfc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:644716286828:android:0e497041ef656d4bac1949",
+        "android_client_info": {
+          "package_name": "com.kannan7.clica"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiT4uuhAO0dQlEqCrf9cK6N1ovci1uurg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
