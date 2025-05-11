@@ -1,7 +1,6 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:clica/authentication/login_screen.dart';
 import 'package:clica/firebase_options.dart';
-import 'package:clica/screens/chat_screens/chat_home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
