@@ -1,8 +1,9 @@
+import 'package:clica/providers/authentication_provider.dart';
 import 'package:clica/utilities/assets_manager.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import 'package:rounded_loading_button_plus/rounded_loading_button.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,7 +14,6 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneNumberController = TextEditingController();
-  final RoundedLoadingButtonController _btnController = RoundedLoadingButtonController();
   Country selectedCountry = Country(
     phoneCode: '91',
     countryCode: 'IN',
@@ -30,12 +30,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _phoneNumberController.dispose();
-    _btnController.stop();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthenticationProvider>();
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
@@ -79,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     counterText: '',
                     labelText: 'Phone Number',
                     prefixIcon: Container(
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.fromLTRB(8.0, 12.0, 8.0, 12.0),
                       child: InkWell(
                         onTap: () {
                           showCountryPicker(
@@ -109,20 +110,33 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     suffixIcon: _phoneNumberController.text.length > 9
-                        ? Container(
-                            height: 20,
-                            width: 20,
-                            margin: const EdgeInsets.all(10),
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.green,
-                            ),
-                            child: const Icon(
-                              Icons.done,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          )
+                        ? authProvider.isLoading
+                            ? const Padding(
+                              padding:  EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(),
+                            )
+                            : InkWell(
+                                onTap: () {
+                                  authProvider.signInWithPhoneNumber(
+                                    '+${selectedCountry.phoneCode}${_phoneNumberController.text}',
+                                    context,
+                                  );
+                                },
+                                child: Container(
+                                  height: 20,
+                                  width: 20,
+                                  margin: const EdgeInsets.all(10),
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.green,
+                                  ),
+                                  child: const Icon(
+                                    Icons.done,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              )
                         : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -134,32 +148,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   onChanged: (value) {
                     setState(() {});
                   },
-                ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  child: RoundedLoadingButton(
-                    controller: _btnController,
-                    onPressed: () {
-                      if (_phoneNumberController.text.length == 10) {
-                        // Handle login logic
-                        _btnController.success();
-                      } else {
-                        _btnController.error();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please enter a valid phone number')),
-                        );
-                        Future.delayed(const Duration(seconds: 2), () {
-                          _btnController.reset();
-                        });
-                      }
-                    },
-                    color: Theme.of(context).colorScheme.primary,
-                    child: const Text(
-                      'Continue',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
                 ),
               ],
             ),

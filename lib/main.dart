@@ -1,8 +1,14 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:clica/authentication/login_screen.dart';
+import 'package:clica/authentication/otp_screen.dart';
+import 'package:clica/authentication/user_information_screen.dart';
 import 'package:clica/firebase_options.dart';
+import 'package:clica/providers/authentication_provider.dart';
+import 'package:clica/screens/chat_screens/chat_home_screen.dart';
+import 'package:clica/utilities/constants.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,7 +16,12 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
 );
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
-  runApp(MyApp(savedThemeMode: savedThemeMode));
+  runApp(
+    MultiProvider(providers: [
+      ChangeNotifierProvider(
+        create: (_) => AuthenticationProvider(),),
+    ],child: 
+    MyApp(savedThemeMode: savedThemeMode),),);
 }
 
 class MyApp extends StatelessWidget {
@@ -37,7 +48,13 @@ class MyApp extends StatelessWidget {
         title: 'Clica',
         theme: theme,
         darkTheme: darkTheme,
-        home: const LoginScreen(),
+        initialRoute: Constants.loginScreen,
+        routes: {
+          Constants.loginScreen: (context) => const LoginScreen(),
+          Constants.otpScreen: (context) => const OtpScreen(),
+          Constants.userInformationScreen: (context) => const UserInformationScreen(),
+          Constants.homeScreen: (context) => const ChatHomeScreen(),
+        },
       ),
     );
   }

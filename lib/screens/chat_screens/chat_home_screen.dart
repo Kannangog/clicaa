@@ -1,9 +1,11 @@
+import 'package:clica/providers/authentication_provider.dart';
 import 'package:clica/screens/chat_screens/chats_list_screen.dart';
 import 'package:clica/screens/chat_screens/groups_screen.dart';
 import 'package:clica/screens/chat_screens/people_screen.dart';
-import 'package:clica/utilities/assets_manager.dart';
+import 'package:clica/utilities/global_methods.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ChatHomeScreen extends StatefulWidget {
   const ChatHomeScreen({super.key});
@@ -23,16 +25,16 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
   ];
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthenticationProvider>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chat'),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(
-              radius: 15,
-              backgroundImage: AssetImage(AssetsManager.userImage),
-            ),
+            padding:const  EdgeInsets.all(8.0),
+            child: userImageWidget(imageUrl: authProvider.userModel!.image, radius: 20, onTap: (){
+            // navigate to user profile
+            },),
           ),
         ],
       ),
