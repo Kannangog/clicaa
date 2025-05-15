@@ -1,5 +1,6 @@
 class Constants {
 
+  static const String landingScreen = '/landingScreen';
   static const String loginScreen = '/loginScreen';
   static const String otpScreen = '/otpScreen';
   static const String userInformationScreen = '/UserInformationScreen';
@@ -8,12 +9,14 @@ class Constants {
   static const String profileScreen = '/profileScreen';
   static const String settingsScreen = '/settingsScreen';
   static const String editProfileScreen = '/editProfileScreen';
+  static const String searchScreen = '/searchScreen';
   static const String friendsScreen = '/friendsScreen';
   static const String friendRequestsScreen = '/friendRequestsScreen';
   static const String aboutScreen = '/aboutScreen';
-  static const String termsAndConditionsScreen = '/termsAndConditionsScreen';
   static const String privacyPolicyScreen = '/privacyPolicyScreen';
-  static const String searchScreen = '/searchScreen';
+  static const String termsAndConditionsScreen = '/termsAndConditionsScreen';
+  
+  
 
 
 
@@ -36,5 +39,5 @@ class Constants {
   static const String verificationId = 'verificationId';
   static const String users = 'users';
   static const String userImages = 'userImages';
-  static const userModel = 'userModel';
+  static const String userModel = 'userModel';
 }

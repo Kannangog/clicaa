@@ -1,10 +1,13 @@
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:clica/authentication/landing_screen.dart';
 import 'package:clica/authentication/login_screen.dart';
 import 'package:clica/authentication/otp_screen.dart';
 import 'package:clica/authentication/user_information_screen.dart';
 import 'package:clica/firebase_options.dart';
 import 'package:clica/providers/authentication_provider.dart';
 import 'package:clica/screens/chat_screens/chat_home_screen.dart';
+import 'package:clica/screens/chat_screens/chat_setting_screen.dart';
+import 'package:clica/screens/chat_screens/profile_screen.dart';
 import 'package:clica/utilities/constants.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -48,12 +51,15 @@ class MyApp extends StatelessWidget {
         title: 'Clica',
         theme: theme,
         darkTheme: darkTheme,
-        initialRoute: Constants.loginScreen,
+        initialRoute: Constants.landingScreen,
         routes: {
+          Constants.landingScreen: (context) => const LandingScreen(),
           Constants.loginScreen: (context) => const LoginScreen(),
           Constants.otpScreen: (context) => const OtpScreen(),
           Constants.userInformationScreen: (context) => const UserInformationScreen(),
           Constants.homeScreen: (context) => const ChatHomeScreen(),
+          Constants.profileScreen: (context) => const ProfileScreen(),
+          Constants.settingsScreen: (context) => const ChatSettingScreen(),
         },
       ),
     );

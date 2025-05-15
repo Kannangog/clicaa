@@ -2,6 +2,7 @@ import 'package:clica/providers/authentication_provider.dart';
 import 'package:clica/screens/chat_screens/chats_list_screen.dart';
 import 'package:clica/screens/chat_screens/groups_screen.dart';
 import 'package:clica/screens/chat_screens/people_screen.dart';
+import 'package:clica/utilities/constants.dart';
 import 'package:clica/utilities/global_methods.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -32,8 +33,13 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
         actions: [
           Padding(
             padding:const  EdgeInsets.all(8.0),
-            child: userImageWidget(imageUrl: authProvider.userModel!.image, radius: 20, onTap: (){
-            // navigate to user profile
+            child: userImageWidget(imageUrl: authProvider.userModel!.image, 
+            radius: 20, 
+            onTap: (){
+            // navigate to user profile with uis as argument
+            Navigator.pushNamed(context, Constants.profileScreen, 
+            arguments: authProvider.userModel!.uid,
+            );
             },),
           ),
         ],

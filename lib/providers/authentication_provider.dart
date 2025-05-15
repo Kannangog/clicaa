@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:clica/models/user_model.dart';
 import 'package:clica/utilities/constants.dart';
 import 'package:clica/utilities/global_methods.dart';
@@ -26,6 +25,32 @@ class AuthenticationProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  // check authentication state
+  Future<bool> checkAuthenticationState() async {
+    bool isSignedIn = false;
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (_auth.currentUser != null) {
+      _uid = _auth.currentUser!.uid;
+
+      //get user data from firestore
+      await getUserDataFromFireStore();
+
+      // save user data to shared preferences
+      await saveUserDataToSharedPreferences();
+
+      
+      notifyListeners();
+
+      isSignedIn = true;
+
+    } else {
+      isSignedIn = false;
+    }
+    return isSignedIn;
+
+  }
   
   // check if user exists
   Future<bool> checkUserExists() async {
@@ -178,6 +203,16 @@ class AuthenticationProvider extends ChangeNotifier {
       return fileUrl;
 
     }
-    // save user data to firestore
     
+    // get user stream
+    Stream<DocumentSnapshot> usersStream({required String userID}){
+      return _firestore.collection(Constants.users).doc(userID).snapshots();
+    }
+
+  Future logout() async{
+    await _auth.signOut();
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    await sharedPreferences.clear();
+    notifyListeners();
+  }
 }
