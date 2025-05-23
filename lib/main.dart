@@ -5,8 +5,12 @@ import 'package:clica/authentication/otp_screen.dart';
 import 'package:clica/authentication/user_information_screen.dart';
 import 'package:clica/firebase_options.dart';
 import 'package:clica/providers/authentication_provider.dart';
+import 'package:clica/providers/chat_provider.dart';
 import 'package:clica/screens/chat_screens/chat_home_screen.dart';
+import 'package:clica/screens/chat_screens/chat_screen.dart';
 import 'package:clica/screens/chat_screens/chat_setting_screen.dart';
+import 'package:clica/screens/chat_screens/friends_requests_screen.dart';
+import 'package:clica/screens/chat_screens/friends_screen.dart';
 import 'package:clica/screens/chat_screens/profile_screen.dart';
 import 'package:clica/utilities/constants.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -20,11 +24,12 @@ void main() async {
 );
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
   runApp(
-    MultiProvider(providers: [
-      ChangeNotifierProvider(
-        create: (_) => AuthenticationProvider(),),
-    ],child: 
-    MyApp(savedThemeMode: savedThemeMode),),);
+    MultiProvider(
+      providers: [
+      ChangeNotifierProvider( create: (_) => AuthenticationProvider(),),
+      ChangeNotifierProvider( create: (_) => ChatProvider(),),
+    ],
+    child: MyApp(savedThemeMode: savedThemeMode),),);
 }
 
 class MyApp extends StatelessWidget {
@@ -60,6 +65,9 @@ class MyApp extends StatelessWidget {
           Constants.homeScreen: (context) => const ChatHomeScreen(),
           Constants.profileScreen: (context) => const ProfileScreen(),
           Constants.settingsScreen: (context) => const ChatSettingScreen(),
+          Constants.friendsScreen: (context) => const FriendsScreen(),
+          Constants.friendRequestsScreen: (context) => const FriendRequestScreen(),
+          Constants.chatScreen: (context) => const ChatScreen(),
         },
       ),
     );

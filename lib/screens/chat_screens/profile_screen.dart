@@ -161,8 +161,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return buildElevatedButton(
         onPressed: (){
           // navigate to friend requests screen
+          Navigator.pushNamed(context, Constants.friendRequestsScreen,);
         },
         label: 'View Friend Requests',
+        width: MediaQuery.of(context).size.width * 0.7,
+        backgroundColor: Theme.of(context).cardColor,
+      textColor: Theme.of(context).primaryColor,
         );
   } else{
     return const SizedBox.shrink();
@@ -178,38 +182,154 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return buildElevatedButton(
         onPressed: (){
           // navigate to friends screen
+          Navigator.pushNamed(context, Constants.friendsScreen,);
         },
         label: 'View Friends',
+        width: MediaQuery.of(context).size.width * 0.7,
+        backgroundColor: Theme.of(context).cardColor,
+      textColor: Theme.of(context).primaryColor,
         );
   } else{
     if(currentUser.uid != userModel.uid){
-       // show send friend request button
+
+      // show cancle friend request button if the sent us friend request
+      //else show send friend request button
+      if(userModel.friendRequestsUIDs.contains(currentUser.uid)){
+        
+           // show send friend request button
     return buildElevatedButton(
-      onPressed: (){
-        //send friend request
+      onPressed: ()async{
+        await context
+        .read<AuthenticationProvider>()
+        .cancelFriendRequest(friendID: userModel.uid).whenComplete((){
+          showSnackBar(context, 'friend request cancelled');
+        });
+      },
+      label: 'Cancel Friend Request',
+      width: MediaQuery.of(context).size.width * 0.7,
+      backgroundColor: Theme.of(context).cardColor,
+      textColor: Theme.of(context).primaryColor,
+      );
+      }else if(userModel.sentFriendRequestsUIDs.contains(currentUser.uid)){
+        return buildElevatedButton(
+      onPressed: ()async{
+        await context
+        .read<AuthenticationProvider>()
+        .acceptFriendRequest(friendID: userModel.uid).whenComplete((){
+          showSnackBar(context, 'You are now friends with ${userModel.name}');
+        });
+      },
+      label: 'Accept Friend Request',
+      width: MediaQuery.of(context).size.width * 0.7,
+      backgroundColor: Theme.of(context).cardColor,
+      textColor: Theme.of(context).primaryColor,
+      );
+      }else if(
+        userModel.friendsUIDs.contains(currentUser.uid)){
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            buildElevatedButton(
+                  onPressed: () async{
+            // show unfriend dialog to ask the user if he is sure to unfriend 
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+              title: const Text('Unfriend', textAlign: TextAlign.center,),
+              content: Text('Are you sure you want to unfriend ${userModel.name}?',
+              textAlign: TextAlign.center ,),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    await context
+                    .read<AuthenticationProvider>()
+                    .removeFriend(friendID: userModel.uid).whenComplete((){
+                      showSnackBar(context, 'You are no longer friends with ${userModel.name}');
+                    });
+                  },
+                  child: const Text('yes'),
+                ),
+              ],)
+            );
+            }, 
+              label: 'Unfriend',
+              width: MediaQuery.of(context).size.width * 0.4,
+              backgroundColor: Theme.of(context).buttonTheme.colorScheme!.primary,
+      textColor: Colors.white,
+            ),
+            buildElevatedButton(
+                  onPressed: () async{
+            //  navigate to chat screen 
+            // Navigate to chat screen with the following arguments
+                      // 1. friend uid 2. friend name 3. friend image 4.group id with an empty string
+                      Navigator.pushNamed(context, Constants.chatScreen, 
+                      arguments: {
+                        Constants.contactUID : userModel.uid,
+                        Constants.contactName : userModel.name,
+                        Constants.contactImage : userModel.image,
+                        Constants.groupID : '',
+                      });
+            }, 
+              label: 'chat',
+              width: MediaQuery.of(context).size.width * 0.4,
+              backgroundColor: Theme.of(context).cardColor,
+      textColor: Theme.of(context).primaryColor,
+            ),
+          ],
+        );
+      }else{
+         return buildElevatedButton(
+      onPressed: ()async{
+        await context
+        .read<AuthenticationProvider>()
+        .sendFriendRequest(friendID: userModel.uid).whenComplete((){
+          showSnackBar(context, 'friend request sent');
+        });
       },
       label: 'Send Friend Request',
+      width: MediaQuery.of(context).size.width * 0.7,
+      backgroundColor: Theme.of(context).cardColor,
+      textColor: Theme.of(context).primaryColor,
       );
-    } else{
+      }
+      
+      } else{
       return const SizedBox.shrink();
     }
    
-
   }
- }
+  }
+ 
  
   Widget buildElevatedButton({
     required VoidCallback onPressed,
     required String label,
+    required double width,
+    required Color backgroundColor,
+    required Color textColor,
     }) {
       return SizedBox(
-        width: MediaQuery.of(context).size.width*0.7,
+        width: width,
         child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: backgroundColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
           onPressed: onPressed,
           child: Text(
             label.toUpperCase(),
             style: GoogleFonts.openSans(
               fontWeight: FontWeight.bold,
+              color: textColor,
             ),
            
         ),
