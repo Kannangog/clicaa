@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:clica/utilities/assets_manager.dart';
+import 'package:date_format/date_format.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -63,5 +65,23 @@ Future<File?> pickImage({
 
   return fileImage;
 }
+
+ Center buildDateTime(groupedByValue) {
+    return Center(
+     child: Card(
+     elevation: 2,
+     child: Padding(padding: const EdgeInsets.all(8.0),
+     child: Text(
+     formatDate(groupedByValue.timeSent, 
+     [ dd, ' ', M, ',', yyyy]),
+     textAlign: TextAlign.center,
+     style: GoogleFonts.openSans(
+     fontWeight: FontWeight.bold,
+     ),
+    ),
+   ),
+ )
+);
+ }
 
 

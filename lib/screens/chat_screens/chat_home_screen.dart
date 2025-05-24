@@ -1,5 +1,5 @@
 import 'package:clica/providers/authentication_provider.dart';
-import 'package:clica/screens/chat_screens/chats_list_screen.dart';
+import 'package:clica/screens/chat_screens/my_chats_list_screen.dart';
 import 'package:clica/screens/chat_screens/groups_screen.dart';
 import 'package:clica/screens/chat_screens/people_screen.dart';
 import 'package:clica/utilities/constants.dart';
@@ -20,7 +20,7 @@ class _ChatHomeScreenState extends State<ChatHomeScreen> {
   int currentIndex = 0;
 
   final List<Widget> pages = const [
-    ChatsListsScreen(),
+    MyChatsScreen(),
     GroupsScreen(),
     PeopleScreen(),
   ];

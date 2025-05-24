@@ -2,19 +2,20 @@ import 'package:clica/models/last_message_model.dart';
 import 'package:clica/providers/authentication_provider.dart';
 import 'package:clica/providers/chat_provider.dart';
 import 'package:clica/utilities/constants.dart';
+import 'package:clica/utilities/global_methods.dart';
 import 'package:date_format/date_format.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class ChatsListsScreen extends StatefulWidget {
-  const ChatsListsScreen({super.key});
+class MyChatsScreen extends StatefulWidget {
+  const MyChatsScreen({super.key});
 
   @override
-  State<ChatsListsScreen> createState() => _ChatsListsScreenState();
+  State<MyChatsScreen> createState() => _MyChatsScreenState();
 }
 
-class _ChatsListsScreenState extends State<ChatsListsScreen> {
+class _MyChatsScreenState extends State<MyChatsScreen> {
   @override
   Widget build(BuildContext context) {
     final uid = context.read<AuthenticationProvider>().userModel!.uid;
@@ -64,10 +65,11 @@ class _ChatsListsScreenState extends State<ChatsListsScreen> {
                        ? 'You: ${chat.message}' 
                        : chat.message;
                       return ListTile(
-                        leading: CircleAvatar(
-                          radius: 30,
-                          backgroundImage: NetworkImage(chat.contactImage),
-                        ),
+                        leading: userImageWidget(
+                          imageUrl: chat.contactImage, 
+                          radius: 40, 
+                          onTap:(){},),
+                        contentPadding:EdgeInsets.zero,
                         title: Text( chat.contactName,),
                         subtitle: Text(
                           lastMessage, 
