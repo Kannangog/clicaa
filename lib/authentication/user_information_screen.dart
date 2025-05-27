@@ -1,14 +1,13 @@
 import 'dart:io';
 import 'package:clica/models/user_model.dart';
 import 'package:clica/providers/authentication_provider.dart';
-import 'package:clica/utilities/constants.dart';
+import 'package:clica/constants.dart';
 import 'package:clica/widgets/display_user_image.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:clica/utilities/global_methods.dart';
 import 'package:clica/widgets/app_bar_back_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rounded_loading_button_plus/rounded_loading_button.dart';
 
 class UserInformationScreen extends StatefulWidget {
   const UserInformationScreen({super.key});
@@ -18,15 +17,15 @@ class UserInformationScreen extends StatefulWidget {
 }
 
 class _UserInformationScreenState extends State<UserInformationScreen> {
-  final RoundedLoadingButtonController _btnController =
-      RoundedLoadingButtonController();
+  // final RoundedLoadingButtonController _btnController =
+  //     RoundedLoadingButtonController();
   final TextEditingController _nameController = TextEditingController();
   File? finalFileImage;
-  String userImage = "";
+  String userImage = '';
 
   @override
   void dispose() {
-    _btnController.stop();
+    //_btnController.stop();
     _nameController.dispose();
     super.dispose();
   }
@@ -34,20 +33,22 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
   void selectImage(bool fromCamera) async {
     finalFileImage = await pickImage(
       fromCamera: fromCamera,
-      onFall: (String message) {
+      onFail: (String message) {
         showSnackBar(context, message);
       },
     );
-    // crop image
-   await cropImage(finalFileImage?.path);
 
-   popContext();
+    // crop image
+    await cropImage(finalFileImage?.path);
+
+    popContext();
   }
-  popContext(){
+
+  popContext() {
     Navigator.pop(context);
   }
 
- Future<void> cropImage(filePath) async {
+  Future<void> cropImage(filePath) async {
     if (filePath != null) {
       CroppedFile? croppedFile = await ImageCropper().cropImage(
         sourcePath: filePath,
@@ -55,23 +56,21 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
         maxWidth: 800,
         compressQuality: 90,
       );
+
       if (croppedFile != null) {
         setState(() {
           finalFileImage = File(croppedFile.path);
         });
-      } else {
-       // popTheDialog(); 
       }
     }
   }
 
-  
-void showBottomSheet() {
+  void showBottomSheet() {
     showModalBottomSheet(
       context: context,
       builder: (context) => SizedBox(
-        height: MediaQuery.of(context).size.height / 5,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               onTap: () {
@@ -92,6 +91,7 @@ void showBottomSheet() {
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,101 +105,138 @@ void showBottomSheet() {
         title: const Text('User Information'),
       ),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            children: [
-              DisplayUserImage(
-                finalFileImage: finalFileImage,
-                 radius: 50,
-                  onPressed:(){
-                showBottomSheet();
-              },),
-              
-              const SizedBox(height: 30),
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Enter your name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              SizedBox(
-                width: double.infinity,
-                child: RoundedLoadingButton(
-                  controller: _btnController,
-                  onPressed: () {
-                    if (_nameController.text.isEmpty || 
-                        _nameController.text.length < 3) {
-                      showSnackBar(context, 'Please enter your name');
-                      _btnController.reset();
-                      return;
-                    }
-                    // Save user information
-                    saveUserDataToFireStore();
-                  },
-                  successIcon: Icons.check,
-                  successColor: Colors.green,
-                  errorColor: Colors.red,
-                  color: Theme.of(context).primaryColor,
-                  child: const Text(
-                    'Save',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 20.0,
         ),
-      ),
+        child: Column(
+          children: [
+            DisplayUserImage(
+              finalFileImage: finalFileImage,
+              radius: 60,
+              onPressed: () {
+                showBottomSheet();
+              },
+            ),
+            const SizedBox(height: 30),
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                hintText: 'Enter your name',
+                labelText: 'Enter your name',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+            Container(
+              width: double.infinity,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: MaterialButton(
+                onPressed: context.read<AuthenticationProvider>().isLoading
+                    ? null
+                    : () {
+                        if (_nameController.text.isEmpty ||
+                            _nameController.text.length < 3) {
+                          showSnackBar(context, 'Please enter your name');
+                          return;
+                        }
+                        // save user data to firestore
+                        saveUserDataToFireStore();
+                      },
+                child: context.watch<AuthenticationProvider>().isLoading
+                    ? const CircularProgressIndicator(
+                        color: Colors.orangeAccent,
+                      )
+                    : const Text(
+                        'Continue',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 1.5),
+                      ),
+              ),
+
+              // RoundedLoadingButton(
+              //   controller: _btnController,
+              //   onPressed: () {
+              //     if (_nameController.text.isEmpty ||
+              //         _nameController.text.length < 3) {
+              //       showSnackBar(context, 'Please enter your name');
+              //       _btnController.reset();
+              //       return;
+              //     }
+              //     // save user data to firestore
+              //     saveUserDataToFireStore();
+              //   },
+              //   successIcon: Icons.check,
+              //   successColor: Colors.green,
+              //   errorColor: Colors.red,
+              //   color: Theme.of(context).primaryColor,
+              //   child: const Text(
+              //     'Continue',
+              //     style: TextStyle(
+              //       color: Colors.white,
+              //       fontSize: 16,
+              //       fontWeight: FontWeight.w500,
+              //     ),
+              //   ),
+              // ),
+            ),
+          ],
+        ),
+      )),
     );
   }
-  void saveUserDataToFireStore() async {
-      final authProvider = context.read<AuthenticationProvider>();
 
-      UserModel userModel = UserModel(
-        uid: authProvider.uid!,
-        name: _nameController.text.trim(),
-        phoneNumber: authProvider.phoneNumber!,
-        image:'',
-        token: '',
-        aboutMe: 'Hey there i am using clica',
-        createdAt:'',
-        lastSeen: '',
-        isOnline: true,
-        friendRequestsUIDs: [],
-        friendsUIDs: [],
-        sentFriendRequestsUIDs: [],
-      );
-      authProvider.saveUserDataToFireStore(
-        userModel: userModel,
-         fileImage: finalFileImage,
-          onSuccess:() async {
-            _btnController.success();
-            // save user data to shared preferences
-            await authProvider.saveUserDataToSharedPreferences();
-            
-            navigateToHomeScreen();
-          },
-           onFail:()async{
-            _btnController.error();
-            showSnackBar(context, 'Failed to save user data');
-            await Future.delayed(const Duration(seconds: 1));
-            _btnController.reset();
-           });
-    }
-    
-      void navigateToHomeScreen() {
-        // navigate to home screen and remove all previous screens
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          Constants.homeScreen,
-          (route) => false,
-        );
-      }
+  // save user data to firestore
+  void saveUserDataToFireStore() async {
+    final authProvider = context.read<AuthenticationProvider>();
+
+    UserModel userModel = UserModel(
+      uid: authProvider.uid!,
+      name: _nameController.text.trim(),
+      phoneNumber: authProvider.phoneNumber!,
+      image: '',
+      token: '',
+      aboutMe: 'Hey there, I\'m using Flutter Chat Pro',
+      lastSeen: '',
+      createdAt: '',
+      isOnline: true,
+      friendsUIDs: [],
+      friendRequestsUIDs: [],
+      sentFriendRequestsUIDs: [],
+    );
+
+    authProvider.saveUserDataToFireStore(
+      userModel: userModel,
+      fileImage: finalFileImage,
+      onSuccess: () async {
+        // save user data to shared preferences
+        await authProvider.saveUserDataToSharedPreferences();
+
+        navigateToHomeScreen();
+      },
+      onFail: () async {
+        showSnackBar(context, 'Failed to save user data');
+      },
+    );
+  }
+
+  void navigateToHomeScreen() {
+    // navigate to home screen and remove all previous screens
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      Constants.homeScreen,
+      (route) => false,
+    );
+  }
 }

@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart'; // for kIsWeb
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 class AppBarBackButton extends StatelessWidget {
@@ -11,19 +12,11 @@ class AppBarBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    IconData icon;
-
-    if (kIsWeb) {
-      icon = Icons.arrow_back; // Default for web
-    } else if (Theme.of(context).platform == TargetPlatform.iOS) {
-      icon = Icons.arrow_back_ios_new;
-    } else {
-      icon = Icons.arrow_back;
-    }
-
     return IconButton(
       onPressed: onPressed,
-      icon: Icon(icon),
+      icon: Icon(
+        Platform.isAndroid ? Icons.arrow_back : Icons.arrow_back_ios_new,
+      ),
     );
   }
 }

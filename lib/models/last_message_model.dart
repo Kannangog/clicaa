@@ -1,4 +1,5 @@
-import 'package:clica/utilities/constants.dart';
+import 'package:clica/constants.dart';
+import 'package:clica/enums/enums.dart';
 
 class LastMessageModel {
   String senderUID;
@@ -10,7 +11,6 @@ class LastMessageModel {
   DateTime timeSent;
   bool isSeen;
 
-
   LastMessageModel({
     required this.senderUID,
     required this.contactUID,
@@ -21,6 +21,7 @@ class LastMessageModel {
     required this.timeSent,
     required this.isSeen,
   });
+
   // to map
   Map<String, dynamic> toMap() {
     return {
@@ -30,10 +31,11 @@ class LastMessageModel {
       Constants.contactImage: contactImage,
       Constants.message: message,
       Constants.messageType: messageType.name,
-      Constants.timeSent: timeSent.millisecondsSinceEpoch,
+      Constants.timeSent: timeSent.microsecondsSinceEpoch,
       Constants.isSeen: isSeen,
     };
   }
+
   // from map
   factory LastMessageModel.fromMap(Map<String, dynamic> map) {
     return LastMessageModel(
@@ -42,8 +44,8 @@ class LastMessageModel {
       contactName: map[Constants.contactName] ?? '',
       contactImage: map[Constants.contactImage] ?? '',
       message: map[Constants.message] ?? '',
-      messageType:map[Constants.messageType].toString().toMessageEnum(),
-      timeSent: DateTime.fromMillisecondsSinceEpoch(map[Constants.timeSent] ?? 0),
+      messageType: map[Constants.messageType].toString().toMessageEnum(),
+      timeSent: DateTime.fromMicrosecondsSinceEpoch(map[Constants.timeSent]),
       isSeen: map[Constants.isSeen] ?? false,
     );
   }
@@ -54,14 +56,14 @@ class LastMessageModel {
     required String contactImage,
   }) {
     return LastMessageModel(
-      senderUID: senderUID ,
-      contactUID: contactUID ,
-      contactName: contactName ,
-      contactImage: contactImage ,
-      message: message ,
-      messageType: messageType ,
-      timeSent: timeSent ,
-      isSeen: isSeen ,
+      senderUID: senderUID,
+      contactUID: contactUID,
+      contactName: contactName,
+      contactImage: contactImage,
+      message: message,
+      messageType: messageType,
+      timeSent: timeSent,
+      isSeen: isSeen,
     );
   }
 }

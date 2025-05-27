@@ -1,4 +1,4 @@
-class AssetsManager {
+class AssetsMenager {
   static const String _images = 'assets/images/';
   static const String _lottie = 'assets/lottie/';
 

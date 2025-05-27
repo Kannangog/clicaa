@@ -1,11 +1,13 @@
+
+import 'package:clica/constants.dart';
 import 'package:clica/models/user_model.dart';
 import 'package:clica/providers/authentication_provider.dart';
-import 'package:clica/utilities/constants.dart';
 import 'package:clica/utilities/global_methods.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class ChatAppBar extends StatefulWidget {
   const ChatAppBar({super.key, required this.contactUID});
@@ -19,10 +21,11 @@ class ChatAppBar extends StatefulWidget {
 class _ChatAppBarState extends State<ChatAppBar> {
   @override
   Widget build(BuildContext context) {
-    return  StreamBuilder(
+    return StreamBuilder(
       stream: context
-          .read<AuthenticationProvider>().usersStream(userID: widget.contactUID),
-      builder: ( context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+          .read<AuthenticationProvider>()
+          .userStream(userID: widget.contactUID),
+      builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
         if (snapshot.hasError) {
           return const Center(child: Text('Something went wrong'));
         }
@@ -31,38 +34,48 @@ class _ChatAppBarState extends State<ChatAppBar> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final userModel = UserModel.fromMap(snapshot.data!.data() as Map<String, dynamic>);
+        final userModel =
+            UserModel.fromMap(snapshot.data!.data() as Map<String, dynamic>);
 
-         return  Row(
-            children: [
-              userImageWidget(
-                imageUrl: userModel.image,
-                 radius: 20, 
-                 onTap: (){
-                  // navigate to this friends profile with uid as argument
-                  Navigator.pushNamed(context, Constants.profileScreen, arguments: userModel.uid);
-                 },),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    userModel.name, style: GoogleFonts.openSans(
-                      fontSize: 16,
-                    ),
-                    
+        DateTime lastSeen =
+            DateTime.fromMillisecondsSinceEpoch(int.parse(userModel.lastSeen));
+
+        return Row(
+          children: [
+            userImageWidget(
+              imageUrl: userModel.image,
+              radius: 20,
+              onTap: () {
+                // navigate to this friends profile with uid as argument
+                Navigator.pushNamed(context, Constants.profileScreen,
+                    arguments: userModel.uid);
+              },
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  userModel.name,
+                  style: GoogleFonts.openSans(
+                    fontSize: 16,
                   ),
-                  Text( 'Online',
-                    //userModel.isOnline ? 'Online' : 'Offline',
-                    style: GoogleFonts.openSans(
-                      fontSize: 12,
-                    ),
-                    
+                ),
+                Text(
+                  userModel.isOnline
+                      ? 'Online'
+                      : 'Last seen ${timeago.format(lastSeen)}',
+                  style: GoogleFonts.openSans(
+                    fontSize: 12,
+                    color: userModel.isOnline
+                        ? Colors.green
+                        : Colors.grey.shade600,
                   ),
-                ],
-              ),
-            ],
-          );
+                ),
+              ],
+            ),
+          ],
+        );
       },
     );
   }

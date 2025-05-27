@@ -1,11 +1,15 @@
-import 'package:clica/utilities/constants.dart';
+// ignore_for_file: avoid_print
+
+import 'package:clica/enums/enums.dart';
 import 'package:clica/widgets/app_bar_back_button.dart';
 import 'package:clica/widgets/friends_list.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class FriendRequestScreen extends StatefulWidget {
-  const FriendRequestScreen({super.key});
+  const FriendRequestScreen({super.key, this.groupId = ''});
+
+  final String groupId;
 
   @override
   State<FriendRequestScreen> createState() => _FriendRequestScreenState();
@@ -16,32 +20,35 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: AppBarBackButton(onPressed: (){
-          Navigator.pop(context);
-        },),
-        title: const Text('Friend Requests'),
+        leading: AppBarBackButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         centerTitle: true,
+        title: const Text('Requests'),
       ),
-      body: Column(
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
           children: [
-        
-            // cupertinoSearchbar
+            // cupertinosearchbar
             CupertinoSearchTextField(
               placeholder: 'Search',
-              style: const TextStyle(
-                color: Colors.white,
-              ),
+              style: const TextStyle(color: Colors.white),
               onChanged: (value) {
-                // Handle search logic here
+                print(value);
               },
             ),
-        
-           const Expanded(
-            child: FriendsList(
+
+            Expanded(
+                child: FriendsList(
               viewType: FriendViewType.friendRequests,
-              )),
+              groupId: widget.groupId,
+            )),
           ],
         ),
+      ),
     );
   }
 }

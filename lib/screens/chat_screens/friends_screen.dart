@@ -1,4 +1,6 @@
-import 'package:clica/utilities/constants.dart';
+// ignore_for_file: avoid_print
+
+import 'package:clica/enums/enums.dart';
 import 'package:clica/widgets/app_bar_back_button.dart';
 import 'package:clica/widgets/friends_list.dart';
 import 'package:flutter/cupertino.dart';
@@ -16,29 +18,31 @@ class _FriendsScreenState extends State<FriendsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: AppBarBackButton(onPressed: (){
-          Navigator.pop(context);
-        },),
-        title: const Text('Friends'),
+        leading: AppBarBackButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         centerTitle: true,
+        title: const Text('Friends'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-        
-            // cupertinoSearchbar
+            // cupertinosearchbar
             CupertinoSearchTextField(
               placeholder: 'Search',
-              style: const TextStyle(
-                color: Colors.white,
-              ),
+              style: const TextStyle(color: Colors.white),
               onChanged: (value) {
-                // Handle search logic here
+                print(value);
               },
             ),
-        
-           const Expanded(child: FriendsList(viewType: FriendViewType.friends ,)),
+
+            const Expanded(
+                child: FriendsList(
+              viewType: FriendViewType.friends,
+            )),
           ],
         ),
       ),

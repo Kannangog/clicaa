@@ -1,4 +1,5 @@
-import 'package:clica/utilities/constants.dart';
+import 'package:clica/constants.dart';
+import 'package:clica/enums/enums.dart';
 
 class MessageReplyModel {
   final String message;
@@ -7,7 +8,6 @@ class MessageReplyModel {
   final String senderImage;
   final MessageEnum messageType;
   final bool isMe;
-
 
   MessageReplyModel({
     required this.message,
@@ -29,6 +29,7 @@ class MessageReplyModel {
       Constants.isMe: isMe,
     };
   }
+
   // from map
   factory MessageReplyModel.fromMap(Map<String, dynamic> map) {
     return MessageReplyModel(

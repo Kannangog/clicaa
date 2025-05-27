@@ -1,63 +1,71 @@
-// import 'package:clica/models/user_model.dart';
-// import 'package:clica/providers/authentication_provider.dart';
-// import 'package:clica/utilities/constants.dart';
-// import 'package:clica/utilities/global_methods.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:flutter/material.dart';
-// import 'package:provider/provider.dart';
 
-// class GroupChatAppBar extends StatefulWidget {
-//   const GroupChatAppBar({super.key, required this.groupId});
+import 'package:clica/constants.dart';
+import 'package:clica/models/group_model.dart';
+import 'package:clica/providers/group_provider.dart';
+import 'package:clica/utilities/global_methods.dart';
+import 'package:clica/widgets/group_members.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-//   final String groupId;
+class GroupChatAppBar extends StatefulWidget {
+  const GroupChatAppBar({super.key, required this.groupId});
 
-//   @override
-//   State<GroupChatAppBar> createState() => _GroupChatAppBarState();
-// }
+  final String groupId;
 
-// class _GroupChatAppBarState extends State<GroupChatAppBar> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return  StreamBuilder(
-//       stream: context
-//           .read<AuthenticationProvider>().usersStream(userID: widget.groupId),
-//       builder: ( context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-//         if (snapshot.hasError) {
-//           return const Center(child: Text('Something went wrong'));
-//         }
+  @override
+  State<GroupChatAppBar> createState() => _GroupChatAppBarState();
+}
 
-//         if (snapshot.connectionState == ConnectionState.waiting) {
-//           return const Center(child: CircularProgressIndicator());
-//         }
+class _GroupChatAppBarState extends State<GroupChatAppBar> {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+      stream:
+          context.read<GroupProvider>().groupStream(groupId: widget.groupId),
+      builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+        if (snapshot.hasError) {
+          return const Center(child: Text('Something went wrong'));
+        }
 
-//         final groupModel = GroupModel.fromMap(snapshot.data!.data() as Map<String, dynamic>);
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-//          return  Row(
-//             children: [
-//               userImageWidget(
-//                 imageUrl: groupModel.groupImage,
-//                  radius: 20, 
-//                  onTap: (){
-//                   // navigate to group settting screen
+        final groupModel =
+            GroupModel.fromMap(snapshot.data!.data() as Map<String, dynamic>);
 
-//                  },),
-//               const SizedBox(width: 10),
-//               Column(
-//                 crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Text(
-//                     groupModel.groupName,
-                    
-//                   ),
-//                   const Text( 'Group description',
-//                     style: TextStyle( fontSize: 12, ),
-                    
-//                   ),
-//                 ],
-//               ),
-//             ],
-//           );
-//       },
-//     );
-//   }
-// }
+        return GestureDetector(
+          onTap: () {
+            // navigate to group information screen
+            context
+                .read<GroupProvider>()
+                .updateGroupMembersList()
+                .whenComplete(() {
+              Navigator.pushNamed(context, Constants.groupInformationScreen);
+            });
+          },
+          child: Row(
+            children: [
+              userImageWidget(
+                imageUrl: groupModel.groupImage,
+                radius: 20,
+                onTap: () {
+                  // navigate to group settings screen
+                },
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(groupModel.groupName),
+                  GroupMembers(membersUIDs: groupModel.membersUIDs),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
