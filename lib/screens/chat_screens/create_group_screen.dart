@@ -191,14 +191,16 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           )
         ],
       ),
+      resizeToAvoidBottomInset: true,
       body: Padding(
         padding: const EdgeInsets.symmetric(
           vertical: 10.0,
           horizontal: 10.0,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -272,16 +274,18 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             CupertinoSearchTextField(
               onChanged: (value) {},
             ),
-
             const SizedBox(height: 10),
 
-            const Expanded(
+            // Remove Expanded when using SingleChildScrollView
+            const SizedBox(
+              height: 200, // Set a fixed height or calculate dynamically
               child: FriendsList(
                 viewType: FriendViewType.groupView,
               ),
             ),
           ],
         ),
+      ),
       ),
     );
   }
