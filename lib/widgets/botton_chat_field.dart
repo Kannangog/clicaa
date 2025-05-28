@@ -205,11 +205,7 @@ class _BottomChatFieldState extends State<BottomChatField> {
                                     title: const Text('Gallery'),
                                     onTap: () => selectImage(false),
                                   ),
-                                  ListTile(
-                                    leading: const Icon(Icons.video_library),
-                                    title: const Text('Video'),
-                                    onTap: selectVideo,
-                                  ),
+                                  // Removed the video library icon and its function.
                                 ],
                               ),
                             ),
@@ -234,8 +230,6 @@ class _BottomChatFieldState extends State<BottomChatField> {
                         )
                       : GestureDetector(
                           onTap: isShowSendButton ? sendTextMessage : null,
-                          onLongPress: isShowSendButton ? null : startRecording,
-                          onLongPressUp: stopRecording,
                           child: Container(
                             margin: const EdgeInsets.all(5),
                             padding: const EdgeInsets.all(8),
@@ -243,8 +237,8 @@ class _BottomChatFieldState extends State<BottomChatField> {
                               color: Colors.deepPurple,
                               borderRadius: BorderRadius.circular(30),
                             ),
-                            child: Icon(
-                              isShowSendButton ? Icons.arrow_upward : Icons.mic,
+                            child: const Icon(
+                              Icons.arrow_upward,
                               color: Colors.white,
                             ),
                           ),

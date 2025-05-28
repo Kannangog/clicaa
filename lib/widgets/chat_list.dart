@@ -225,18 +225,19 @@ class _ChatListState extends State<ChatList> {
         });
 
         final messagesList = snapshot.data!;
-        return GroupedListView<MessageModel, DateTime>(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          reverse: true,
-          controller: _scrollController,
-          elements: messagesList,
-          groupBy: (element) {
-            final timeSent = element.timeSent;
-            return DateTime(timeSent.year, timeSent.month, timeSent.day);
-          },
-          groupSeparatorBuilder: (DateTime groupedByValue) =>
-              SizedBox(height: 40, child: buildDateTime(groupedByValue)),
-          itemBuilder: (context, MessageModel message) {
+        return Expanded(
+          child: GroupedListView<MessageModel, DateTime>(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            reverse: true,
+            controller: _scrollController,
+            elements: messagesList,
+            groupBy: (element) {
+              final timeSent = element.timeSent;
+              return DateTime(timeSent.year, timeSent.month, timeSent.day);
+            },
+            groupSeparatorBuilder: (DateTime groupedByValue) =>
+                SizedBox(height: 40, child: buildDateTime(groupedByValue)),
+            itemBuilder: (context, MessageModel message) {
             if (message.deletedBy.contains(uid)) return const SizedBox.shrink();
 
             final isMe = message.senderUID == uid;
@@ -328,7 +329,7 @@ class _ChatListState extends State<ChatList> {
             final b = item2.timeSent;
             return b.compareTo(a);
           },
-        );
+         ) );
       },
     );
   }
