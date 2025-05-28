@@ -36,7 +36,7 @@ Widget userImageWidget({
 }
 
 // picp image from gallery or camera
-Future<File?> pickImage({
+Future<File?> pickImage(BuildContext context, {
   required bool fromCamera,
   required Function(String) onFail,
 }) async {

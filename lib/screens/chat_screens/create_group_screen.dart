@@ -34,6 +34,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
   void selectImage(bool fromCamera) async {
     finalFileImage = await pickImage(
+      context,
       fromCamera: fromCamera,
       onFail: (String message) {
         showSnackBar(context, message);

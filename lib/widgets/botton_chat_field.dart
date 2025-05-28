@@ -83,6 +83,7 @@ class _BottomChatFieldState extends State<BottomChatField> {
 
   Future<void> selectImage(bool fromCamera) async {
     finalFileImage = await pickImage(
+      context,
       fromCamera: fromCamera,
       onFail: (msg) => showSnackBar(context, msg),
     );

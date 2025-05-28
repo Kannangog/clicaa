@@ -32,10 +32,10 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
 
   void selectImage(bool fromCamera) async {
     finalFileImage = await pickImage(
-      fromCamera: fromCamera,
+      fromCamera as BuildContext,
       onFail: (String message) {
         showSnackBar(context, message);
-      },
+      }, fromCamera: fromCamera,
     );
 
     // crop image
@@ -207,6 +207,7 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
       name: _nameController.text.trim(),
       phoneNumber: authProvider.phoneNumber!,
       image: '',
+      profileimage: '', // Add the required profileimage argument here
       token: '',
       aboutMe: 'Hey there, I\'m using Flutter Chat Pro',
       lastSeen: '',

@@ -5,6 +5,7 @@ class UserModel {
   String name;
   String phoneNumber;
   String image;
+  String profileimage;
   String token;
   String aboutMe;
   String lastSeen;
@@ -19,6 +20,7 @@ class UserModel {
     required this.name,
     required this.phoneNumber,
     required this.image,
+    required this.profileimage,
     required this.token,
     required this.aboutMe,
     required this.lastSeen,
@@ -36,6 +38,7 @@ class UserModel {
       name: map[Constants.name] ?? '',
       phoneNumber: map[Constants.phoneNumber] ?? '',
       image: map[Constants.image] ?? '',
+      profileimage: map[Constants.profileimage] ?? '',
       token: map[Constants.token] ?? '',
       aboutMe: map[Constants.aboutMe] ?? '',
       lastSeen: map[Constants.lastSeen] ?? '',
@@ -78,4 +81,6 @@ class UserModel {
   int get hashCode {
     return uid.hashCode;
   }
+
+  get photoUrl => null;
 }

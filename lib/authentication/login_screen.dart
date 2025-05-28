@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildAppTitle(TextTheme textTheme) {
     return Text(
-      'Flutter Chat Pro',
+      'Clica',
       style: GoogleFonts.openSans(
         fontSize: 28,
         fontWeight: FontWeight.w500,

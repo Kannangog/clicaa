@@ -375,4 +375,28 @@ if (_userModel != null) {
     await sharedPreferences.clear();
     notifyListeners();
   }
+
+  Future<void> updateUserProfile(String uid, Map<String, dynamic> map, {File? fileImage}) async {
+    try {
+      // If a new image is provided, upload it and update the image URL in the map
+      if (fileImage != null) {
+        String imageUrl = await storeFileToStorage(
+          file: fileImage,
+          reference: '${Constants.userImages}/$uid',
+        );
+        map['image'] = imageUrl;
+        // Also update the local userModel image if it exists
+        if (_userModel != null && _userModel!.uid == uid) {
+          _userModel!.image = imageUrl;
+        }
+      }
+      await _firestore.collection(Constants.users).doc(uid).update(map);
+      await getUserDataFromFireStore();
+      // Save updated user data to shared preferences
+      await saveUserDataToSharedPreferences();
+      notifyListeners();
+    } on FirebaseException catch (e) {
+      print('Error updating user profile: $e');
+    }
+  }
 }
