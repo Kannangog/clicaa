@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:clica/authentication/user_information_screen.dart';
 import 'package:clica/models/user_model.dart';
 import 'package:clica/providers/authentication_provider.dart';
 import 'package:clica/constants.dart';
@@ -106,6 +107,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           iconContainerColor: Colors.deepPurple,
                           onTap: () {
                             // navigate to account settings
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const UserInformationScreen(
+                                  enableUpdatingInformation: true,
+                                ),
+                              ),
+                            );
                           },
                         ),
                         SettingsListTile(
