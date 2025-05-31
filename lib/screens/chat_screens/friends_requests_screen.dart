@@ -44,7 +44,7 @@ class _FriendRequestScreenState extends State<FriendRequestScreen> {
             Expanded(
                 child: FriendsList(
               viewType: FriendViewType.friendRequests,
-              groupId: widget.groupId,
+              groupId: widget.groupId, searchQuery: '', users: null,
             )),
           ],
         ),

@@ -12,7 +12,7 @@ class FriendsList extends StatelessWidget {
     super.key,
     required this.viewType,
     this.groupId = '',
-    this.groupMembersUIDs = const [],
+    this.groupMembersUIDs = const [], required String searchQuery, required users,
   });
 
   final FriendViewType viewType;

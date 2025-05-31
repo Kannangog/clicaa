@@ -9,52 +9,70 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class PublicGroupScreen extends StatefulWidget {
-  const PublicGroupScreen({super.key});
+  const PublicGroupScreen({super.key, required String searchQuery});
 
   @override
   State<PublicGroupScreen> createState() => _PublicGroupScreenState();
 }
 
 class _PublicGroupScreenState extends State<PublicGroupScreen> {
+  String _searchQuery = '';
+
   @override
   Widget build(BuildContext context) {
     final uid = context.read<AuthenticationProvider>().userModel!.uid;
     return SafeArea(
-        child: Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: CupertinoSearchTextField(
-            onChanged: (value) {},
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: CupertinoSearchTextField(
+              placeholder: 'Search public groups',
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+            ),
           ),
-        ),
+          // stream builder for public groups
+          StreamBuilder<List<GroupModel>>(
+            stream: context.read<GroupProvider>().getPublicGroupsStream(userId: uid),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+              if (snapshot.hasError) {
+                return const Center(
+                  child: Text('Something went wrong'),
+                );
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(
+                  child: Text('No Public groups'),
+                );
+              }
 
-        // stream builder for private groups
-        StreamBuilder<List<GroupModel>>(
-          stream:
-              context.read<GroupProvider>().getPublicGroupsStream(userId: uid),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-            if (snapshot.hasError) {
-              return const Center(
-                child: Text('Something went wrong'),
-              );
-            }
-            if (snapshot.data!.isEmpty) {
-              return const Center(
-                child: Text('No Public groups'),
-              );
-            }
-            return Expanded(
-              child: ListView.builder(
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  final groupModel = snapshot.data![index];
-                  return ChatWidget(
+              // Filter groups based on search query
+              final filteredGroups = snapshot.data!.where((group) {
+                return group.groupName.toLowerCase().contains(_searchQuery) ||
+                    (group.groupDescription.toLowerCase().contains(_searchQuery));
+              }).toList();
+
+              if (filteredGroups.isEmpty) {
+                return const Center(
+                  child: Text('No groups match your search'),
+                );
+              }
+
+              return Expanded(
+                child: ListView.builder(
+                  itemCount: filteredGroups.length,
+                  itemBuilder: (context, index) {
+                    final groupModel = filteredGroups[index];
+                    return ChatWidget(
                       group: groupModel,
                       isGroup: true,
                       onTap: () {
@@ -128,13 +146,15 @@ class _PublicGroupScreenState extends State<PublicGroupScreen> {
                             },
                           );
                         });
-                      });
-                },
-              ),
-            );
-          },
-        )
-      ],
-    ));
+                      },
+                    );
+                  },
+                ),
+              );
+            },
+          )
+        ],
+      ),
+    );
   }
 }

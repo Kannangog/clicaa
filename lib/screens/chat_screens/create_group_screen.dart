@@ -281,7 +281,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
             const SizedBox(
               height: 200, // Set a fixed height or calculate dynamically
               child: FriendsList(
-                viewType: FriendViewType.groupView,
+                viewType: FriendViewType.groupView, searchQuery: '', users: null,
               ),
             ),
           ],

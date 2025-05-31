@@ -287,7 +287,7 @@ void showAddMembersBottomSheet({
             Expanded(
               child: FriendsList(
                 viewType: FriendViewType.groupView,
-                groupMembersUIDs: groupMembersUIDs,
+                groupMembersUIDs: groupMembersUIDs, searchQuery: '', users: null,
               ),
             ),
           ],

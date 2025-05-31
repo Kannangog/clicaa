@@ -1,8 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'dart:io';
-
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:clica/authentication/user_information_screen.dart';
 import 'package:clica/models/user_model.dart';
 import 'package:clica/providers/authentication_provider.dart';
 import 'package:clica/constants.dart';
@@ -11,11 +10,8 @@ import 'package:clica/widgets/app_bar_back_button.dart';
 import 'package:clica/widgets/group_details_card.dart';
 import 'package:clica/widgets/settings_list_tile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -102,109 +98,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                    Card(
+                  Card(
                     child: Column(
                       children: [
-                      SettingsListTile(
-                        title: 'Account',
-                        icon: Icons.person,
-                        iconContainerColor: Colors.deepPurple,
-                        onTap: () async {
-                        // Show a bottom sheet to update photo and about me
-                        final userProvider = context.read<AuthenticationProvider>();
-                        final userModel = UserModel.fromMap(
-                          (await userProvider.userStream(userID: uid).first).data() as Map<String, dynamic>
-                        );
-                        // Controller for "About Me"
-                        TextEditingController aboutController = TextEditingController(text: userModel.aboutMe);
-
-                        // Variable for profile image (to show immediately after picking)
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                          ),
-                          builder: (context) {
-                          return Padding(
-                            padding: EdgeInsets.only(
-                            bottom: MediaQuery.of(context).viewInsets.bottom,
-                            left: 20,
-                            right: 20,
-                            top: 20,
-                            ),
-                            child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Stack(
-                              alignment: Alignment.bottomRight,
-                              children: [
-                                CircleAvatar(
-                                radius: 40,
-                                backgroundImage: userModel.photoUrl != null && userModel.photoUrl!.isNotEmpty
-                                  ? NetworkImage(userModel.photoUrl!)
-                                  : null,
-                                child: userModel.photoUrl == null || userModel.photoUrl!.isEmpty
-                                  ? const Icon(Icons.person, size: 40)
-                                  : null,
+                        SettingsListTile(
+                          title: 'Account',
+                          icon: Icons.person,
+                          iconContainerColor: Colors.deepPurple,
+                          onTap: () {
+                            // navigate to account settings
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const UserInformationScreen(
+                                  enableUpdatingInformation: true,
                                 ),
-                                IconButton(
-                                icon: const Icon(Icons.camera_alt),
-                                onPressed: () async {
-                                  // Pick image and update photoUrl
-                                  String? newPhotoUrl = await GlobalMethods.pickAndUploadImage(context, uid);
-                                  if (newPhotoUrl != null) {
-                                    await userProvider.updateUserProfile(uid, {'photoUrl': newPhotoUrl});
-                                    // Refresh the state to show the new image
-                                    setState(() {});
-                                    // Do not pop here; let the user see the updated image
-                                  }
-                                },
-                                ),
-                              ],
                               ),
-                              const SizedBox(height: 20),
-                              TextField(
-                              controller: aboutController,
-                              decoration: const InputDecoration(
-                                labelText: 'About Me',
-                                border: OutlineInputBorder(),
-                              ),
-                                maxLines: 2,
-                              ),
-                              const SizedBox(height: 20),
-                              ElevatedButton(
-                              onPressed: () async {
-                                // If a new image was picked and cropped, show it immediately
-                                await userProvider.updateUserProfile(uid, {'aboutMe': aboutController.text});
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Save'),
-                              ),
-                              const SizedBox(height: 10),
-                            ],
-                            ),
-                          );
+                            );
                           },
-                        );
-                        },
-                      ),
-                      SettingsListTile(
-                        title: 'My Media',
-                        icon: Icons.image,
-                        iconContainerColor: Colors.green,
-                        onTap: () {
-                        // navigate to account settings
-                        },
-                      ),
-                      SettingsListTile(
-                        title: 'Notifications',
-                        icon: Icons.notifications,
-                        iconContainerColor: Colors.red,
-                        onTap: () {
-                        // navigate to account settings
-                        },
-                      ),
+                        ),
+                        SettingsListTile(
+                          title: 'My Media',
+                          icon: Icons.image,
+                          iconContainerColor: Colors.green,
+                          onTap: () {
+                            // navigate to account settings
+                          },
+                        ),
+                        SettingsListTile(
+                          title: 'Notifications',
+                          icon: Icons.notifications,
+                          iconContainerColor: Colors.red,
+                          onTap: () {
+                            // navigate to account settings
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -312,62 +240,5 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       ),
     );
-  }
-}
-
-class GlobalMethods {
-  static Future<String?> pickAndUploadImage(BuildContext context, String uid) async {
-    // You need to add image_picker and firebase_storage to your pubspec.yaml
-    // import 'package:image_picker/image_picker.dart';
-    // import 'package:firebase_storage/firebase_storage.dart';
-
-    try {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-
-      if (pickedFile == null) {
-        // User cancelled the picker
-        return null;
-      }
-
-      // Let user crop the image before uploading (like in user information screen)
-      // You need to add image_cropper to your pubspec.yaml
-      // import 'package:image_cropper/image_cropper.dart';
-      final croppedFile = await ImageCropper().cropImage(
-        sourcePath: pickedFile.path,
-        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Edit Image',
-            toolbarColor: Theme.of(context).primaryColor,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.square,
-            lockAspectRatio: false,
-          ),
-          IOSUiSettings(
-            title: 'Edit Image',
-          ),
-        ],
-      );
-
-      if (croppedFile == null) {
-        // User cancelled cropping
-        return null;
-      }
-
-      final file = File(croppedFile.path);
-
-      final storageRef = FirebaseStorage.instance.ref().child('user_profile_photos/$uid.jpg');
-      final uploadTask = storageRef.putFile(file);
-
-      final snapshot = await uploadTask;
-      final downloadUrl = await snapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to upload image: $e')),
-      );
-      return null;
-    }
   }
 }

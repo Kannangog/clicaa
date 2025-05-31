@@ -8,7 +8,7 @@ class DisplayUserImage extends StatelessWidget {
     super.key,
     required this.finalFileImage,
     required this.radius,
-    required this.onPressed,
+    required this.onPressed, String? userImage,
   });
 
   final File? finalFileImage;

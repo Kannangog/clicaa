@@ -30,8 +30,8 @@ class _GroupsScreenState extends State<GroupsScreen> {
             ),
           ),
           body: const TabBarView(children: [
-            PrivateGroupScreen(),
-            PublicGroupScreen(),
+            PrivateGroupScreen(searchQuery: '',),
+            PublicGroupScreen(searchQuery: '',),
           ]),
         ));
   }
