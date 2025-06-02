@@ -1,26 +1,24 @@
 import 'package:clica/constants.dart';
 
 class UserModel {
-  String uid;
-  String name;
-  String phoneNumber;
-  String image;
-  String profileimage;
-  String token;
-  String aboutMe;
-  String lastSeen;
-  String createdAt;
-  bool isOnline;
-  List<String> friendsUIDs;
-  List<String> friendRequestsUIDs;
-  List<String> sentFriendRequestsUIDs;
+  final String uid;
+  final String name;
+  final String phoneNumber;
+  final String image;
+  final String token;
+  final String aboutMe;
+  final String lastSeen;
+  final String createdAt;
+  final bool isOnline;
+  final List<String> friendsUIDs;
+  final List<String> friendRequestsUIDs;
+  final List<String> sentFriendRequestsUIDs;
 
   UserModel({
     required this.uid,
     required this.name,
     required this.phoneNumber,
     required this.image,
-    required this.profileimage,
     required this.token,
     required this.aboutMe,
     required this.lastSeen,
@@ -31,14 +29,12 @@ class UserModel {
     required this.sentFriendRequestsUIDs,
   });
 
-  // from map
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
       uid: map[Constants.uid] ?? '',
       name: map[Constants.name] ?? '',
       phoneNumber: map[Constants.phoneNumber] ?? '',
       image: map[Constants.image] ?? '',
-      profileimage: map[Constants.profileimage] ?? '',
       token: map[Constants.token] ?? '',
       aboutMe: map[Constants.aboutMe] ?? '',
       lastSeen: map[Constants.lastSeen] ?? '',
@@ -52,7 +48,6 @@ class UserModel {
     );
   }
 
-  // to map
   Map<String, dynamic> toMap() {
     return {
       Constants.uid: uid,
@@ -70,17 +65,24 @@ class UserModel {
     };
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-
-    return other is UserModel && other.uid == uid;
+  UserModel copyWith({
+    String? name,
+    String? aboutMe,
+    String? image,
+  }) {
+    return UserModel(
+      uid: uid,
+      name: name ?? this.name,
+      phoneNumber: phoneNumber,
+      image: image ?? this.image,
+      token: token,
+      aboutMe: aboutMe ?? this.aboutMe,
+      lastSeen: lastSeen,
+      createdAt: createdAt,
+      isOnline: isOnline,
+      friendsUIDs: friendsUIDs,
+      friendRequestsUIDs: friendRequestsUIDs,
+      sentFriendRequestsUIDs: sentFriendRequestsUIDs,
+    );
   }
-
-  @override
-  int get hashCode {
-    return uid.hashCode;
-  }
-
-  get photoUrl => null;
 }

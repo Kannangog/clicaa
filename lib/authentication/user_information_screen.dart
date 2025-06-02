@@ -7,85 +7,73 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:clica/utilities/global_methods.dart';
 import 'package:clica/widgets/app_bar_back_button.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-/// ***********  ✨ Windsurf Command 🌟  ************
 class UserInformationScreen extends StatefulWidget {
-const UserInformationScreen({super.key, required this.enableUpdatingInformation});
+  const UserInformationScreen({
+    super.key,
+    required this.enableUpdatingInformation,
+  });
 
-final bool enableUpdatingInformation;
+  final bool enableUpdatingInformation;
 
   @override
   State<UserInformationScreen> createState() => _UserInformationScreenState();
 }
 
 class _UserInformationScreenState extends State<UserInformationScreen> {
-  // final RoundedLoadingButtonController _btnController =
-  //     RoundedLoadingButtonController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _aboutMeController = TextEditingController();
   File? finalFileImage;
   String userImage = '';
 
   @override
-  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _initializeUserData();
+  }
+
+  void _initializeUserData() {
     final authProvider = context.read<AuthenticationProvider>();
-    // If updating, prefill fields with current user data
     if (widget.enableUpdatingInformation && authProvider.userModel != null) {
       _nameController.text = authProvider.userModel!.name;
       userImage = authProvider.userModel!.image;
       _aboutMeController.text = authProvider.userModel!.aboutMe;
     }
   }
-  @override
-  void initState() {
-    super.initState();
-    final authProvider = context.read<AuthenticationProvider>();
-    // If updating, prefill fields with current user data
-    if (widget.enableUpdatingInformation && authProvider.userModel != null) {
-      _nameController.text = authProvider.userModel!.name;
-      userImage = authProvider.userModel!.image;
-      _aboutMeController.text = authProvider.userModel!.aboutMe;
-    }
-  }
-  @override
+
   @override
   void dispose() {
-    //_btnController.stop();
     _nameController.dispose();
     _aboutMeController.dispose();
     super.dispose();
   }
-  void selectImage(bool fromCamera) async {
-    finalFileImage = await pickImage(
-      context,
-      fromCamera: fromCamera,
-      onFail: (String message) {
-        showSnackBar(context, message);
-      },
-    );
 
-    // crop image
-    await cropImage(finalFileImage?.path);
-
-    popContext();
+  Future<File?> pickImage({
+    required BuildContext context,
+    required bool fromCamera,
+    required Function(String) onFail,
+  }) async {
+    try {
+      final image = await ImagePicker().pickImage(
+        source: fromCamera ? ImageSource.camera : ImageSource.gallery,
+      );
+      return image != null ? File(image.path) : null;
+    } catch (e) {
+      onFail('Failed to pick image: $e');
+      return null;
+    }
   }
 
-  popContext() {
-    Navigator.pop(context);
-  }
-
-  Future<void> cropImage(filePath) async {
+  Future<void> cropImage(String? filePath) async {
     if (filePath != null) {
-      CroppedFile? croppedFile = await ImageCropper().cropImage(
+      final croppedFile = await ImageCropper().cropImage(
         sourcePath: filePath,
         maxHeight: 800,
         maxWidth: 800,
         compressQuality: 90,
       );
-
       if (croppedFile != null) {
         setState(() {
           finalFileImage = File(croppedFile.path);
@@ -102,16 +90,12 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              onTap: () {
-                selectImage(true);
-              },
+              onTap: () => _selectImage(true),
               leading: const Icon(Icons.camera_alt),
               title: const Text('Camera'),
             ),
             ListTile(
-              onTap: () {
-                selectImage(false);
-              },
+              onTap: () => _selectImage(false),
               leading: const Icon(Icons.image),
               title: const Text('Gallery'),
             ),
@@ -121,150 +105,155 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
     );
   }
 
+  Future<void> _selectImage(bool fromCamera) async {
+    final image = await pickImage(
+      context: context,
+      fromCamera: fromCamera,
+      onFail: (message) => showSnackBar(context, message),
+    );
+
+    if (image != null) {
+      await cropImage(image.path);
+      if (mounted) Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-      leading: AppBarBackButton(
-        onPressed: () {
-        Navigator.of(context).pop();
-        },
-      ),
-      centerTitle: true,
-      title: const Text('User Information'),
+        leading: AppBarBackButton(
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        centerTitle: true,
+        title: Text(
+          widget.enableUpdatingInformation
+              ? 'Update Profile'
+              : 'User Information',
+        ),
       ),
       body: Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 20.0,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                DisplayUserImage(
+                  finalFileImage: finalFileImage,
+                  userImage: userImage.isNotEmpty ? userImage : null,
+                  radius: 60,
+                  onPressed: showBottomSheet,
+                ),
+                const SizedBox(height: 30),
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter your name',
+                    labelText: 'Enter your name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _aboutMeController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    hintText: 'About me',
+                    labelText: 'About me',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(8)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                _buildSubmitButton(context),
+              ],
+            ),
+          ),
         ),
-        child: Column(
-        children: [
-          DisplayUserImage(
-          finalFileImage: finalFileImage,
-          userImage: userImage.isNotEmpty ? userImage : null,
-          radius: 60,
-          onPressed: () {
-            showBottomSheet();
-          },
-          ),
-          const SizedBox(height: 30),
-          TextField(
-          controller: _nameController,
-          decoration: const InputDecoration(
-            hintText: 'Enter your name',
-            labelText: 'Enter your name',
-            border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(8),
-            ),
-            ),
-          ),
-          ),
-          const SizedBox(height: 20),
-          TextField(
-          controller: _aboutMeController,
-          maxLines: 2,
-          decoration: const InputDecoration(
-            hintText: 'About me',
-            labelText: 'About me',
-            border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(8),
-            ),
-            ),
-          ),
-          ),
-          const SizedBox(height: 40),
-          Container(
-          width: double.infinity,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
-            borderRadius: BorderRadius.circular(25),
-          ),
-          child: MaterialButton(
-            onPressed: context.read<AuthenticationProvider>().isLoading
-              ? null
-              : () {
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton(BuildContext context) {
+    final authProvider = context.watch<AuthenticationProvider>();
+    return Container(
+      width: double.infinity,
+      height: 50,
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor,
+        borderRadius: BorderRadius.circular(25),
+      ),
+      child: MaterialButton(
+        onPressed: authProvider.isLoading
+            ? null
+            : () {
                 if (_nameController.text.isEmpty ||
-                  _nameController.text.length < 3) {
-                showSnackBar(context, 'Please enter your name');
-                return;
+                    _nameController.text.length < 3) {
+                  showSnackBar(context, 'Name must be at least 3 characters');
+                  return;
                 }
-                if (_aboutMeController.text.isEmpty) {
-                showSnackBar(context, 'Please enter about me');
-                return;
-                }
-                // save user data to firestore
-                saveUserDataToFireStore();
+                _saveUserData();
               },
-            child: context.watch<AuthenticationProvider>().isLoading
-              ? const CircularProgressIndicator(
-                color: Colors.orangeAccent,
-              )
-              : const Text(
-                'Continue',
-                style: TextStyle(
+        child: authProvider.isLoading
+            ? const CircularProgressIndicator(color: Colors.orangeAccent)
+            : Text(
+                widget.enableUpdatingInformation ? 'Update Profile' : 'Continue',
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 1.5),
               ),
-          ),
-          ),
-        ],
-        ),
-      ),
       ),
     );
   }
 
-  // save user data to firestore
-  void saveUserDataToFireStore() async {
+  void _saveUserData() async {
     final authProvider = context.read<AuthenticationProvider>();
+    final userModel = authProvider.userModel;
 
-    if (authProvider.uid == null) {
-      showSnackBar(context, 'User information is incomplete.');
-      return;
+    if (widget.enableUpdatingInformation && userModel != null) {
+      final updatedUser = userModel.copyWith(
+        name: _nameController.text.trim(),
+        aboutMe: _aboutMeController.text.trim().isEmpty
+            ? 'Hey there, I\'m using clica'
+            : _aboutMeController.text.trim(),
+      );
+
+      await authProvider.updateUserProfile(
+        userModel: updatedUser,
+        fileImage: finalFileImage,
+        onSuccess: () => Navigator.of(context).pop(),
+        onFail: (error) => showSnackBar(context, 'Update failed: $error'),
+      );
+    } else {
+      final newUser = UserModel(
+        uid: authProvider.uid!,
+        name: _nameController.text.trim(),
+        phoneNumber: authProvider.phoneNumber ?? '',
+        image: '',
+        token: '',
+        aboutMe: _aboutMeController.text.trim().isEmpty
+            ? 'Hey there, I\'m using clica'
+            : _aboutMeController.text.trim(),
+        lastSeen: DateTime.now().millisecondsSinceEpoch.toString(),
+        createdAt: DateTime.now().millisecondsSinceEpoch.toString(),
+        isOnline: true,
+        friendsUIDs: [],
+        friendRequestsUIDs: [],
+        sentFriendRequestsUIDs: [],
+      );
+
+      authProvider.saveUserDataToFireStore(
+        userModel: newUser,
+        fileImage: finalFileImage,
+        onSuccess: () => Navigator.of(context).pushNamedAndRemoveUntil(
+          Constants.homeScreen, (route) => false),
+        onFail: (error) => showSnackBar(context, 'Save failed: $error'),
+      );
     }
-    // Only require phone number if not updating information
-    UserModel userModel = UserModel(
-      uid: authProvider.uid!,
-      name: _nameController.text.trim(),
-      phoneNumber: authProvider.phoneNumber ?? '', // Use empty string if updating and phoneNumber is null
-      image: '',
-      token: '',
-      aboutMe: _aboutMeController.text.trim().isEmpty ? 'Hey there, I\'m using clica' : _aboutMeController.text.trim(),
-      lastSeen: '',
-      createdAt: '',
-      isOnline: true,
-      friendsUIDs: [],
-      friendRequestsUIDs: [],
-      sentFriendRequestsUIDs: [], profileimage: '',
-    );
-
-    authProvider.saveUserDataToFireStore(
-      userModel: userModel,
-      fileImage: finalFileImage,
-      onSuccess: () async {
-        // save user data to shared preferences
-        await authProvider.saveUserDataToSharedPreferences();
-
-        navigateToHomeScreen();
-      },
-      onFail: () async {
-        showSnackBar(context, 'Failed to save user data');
-      },
-    );
-  }
-
-  void navigateToHomeScreen() {
-    // navigate to home screen and remove all previous screens
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      Constants.homeScreen,
-      (route) => false,
-    );
   }
 }

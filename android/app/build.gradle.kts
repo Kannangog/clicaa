@@ -58,4 +58,7 @@ flutter {
 
 dependencies {
     // Add your dependencies here if needed
+    implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
+
+    implementation("com.google.firebase:firebase-auth")
 }

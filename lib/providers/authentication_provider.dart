@@ -7,6 +7,7 @@ import 'package:clica/constants.dart';
 import 'package:clica/utilities/global_methods.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,42 +26,30 @@ class AuthenticationProvider extends ChangeNotifier {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  // chech authentication state
   Future<bool> checkAuthenticationState() async {
     bool isSignedIn = false;
     await Future.delayed(const Duration(seconds: 2));
 
     if (_auth.currentUser != null) {
       _uid = _auth.currentUser!.uid;
-      // get user data from firestore
       await getUserDataFromFireStore();
-
-      // save user data to shared preferences
       await saveUserDataToSharedPreferences();
-
       notifyListeners();
-
       isSignedIn = true;
     } else {
       isSignedIn = false;
     }
-
     return isSignedIn;
   }
 
-  // chech if user exists
   Future<bool> checkUserExists() async {
     DocumentSnapshot documentSnapshot =
         await _firestore.collection(Constants.users).doc(_uid).get();
-    if (documentSnapshot.exists) {
-      return true;
-    } else {
-      return false;
-    }
+    return documentSnapshot.exists;
   }
 
-  // update user status
   Future<void> updateUserStatus({required bool value}) async {
     await _firestore
         .collection(Constants.users)
@@ -68,7 +57,6 @@ class AuthenticationProvider extends ChangeNotifier {
         .update({Constants.isOnline: value});
   }
 
-  // get user data from firestore
   Future<void> getUserDataFromFireStore() async {
     DocumentSnapshot documentSnapshot =
         await _firestore.collection(Constants.users).doc(_uid).get();
@@ -81,26 +69,25 @@ class AuthenticationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // save user data to shared preferences
   Future<void> saveUserDataToSharedPreferences() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-if (_userModel != null) {
-  await sharedPreferences.setString(
-      Constants.userModel, jsonEncode(_userModel!.toMap()));
-}
+    if (_userModel != null) {
+      await sharedPreferences.setString(
+          Constants.userModel, jsonEncode(_userModel!.toMap()));
+    }
   }
 
-  // get data from shared preferences
   Future<void> getUserDataFromSharedPreferences() async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     String userModelString =
         sharedPreferences.getString(Constants.userModel) ?? '';
-    _userModel = UserModel.fromMap(jsonDecode(userModelString));
-    _uid = _userModel!.uid;
-    notifyListeners();
+    if (userModelString.isNotEmpty) {
+      _userModel = UserModel.fromMap(jsonDecode(userModelString));
+      _uid = _userModel!.uid;
+      notifyListeners();
+    }
   }
 
-  // sign in with phone number
   Future<void> signInWithPhoneNumber({
     required String phoneNumber,
     required BuildContext context,
@@ -128,7 +115,6 @@ if (_userModel != null) {
       codeSent: (String verificationId, int? resendToken) async {
         _isLoading = false;
         notifyListeners();
-        // navigate to otp screen
         Navigator.of(context).pushNamed(
           Constants.otpScreen,
           arguments: {
@@ -141,7 +127,6 @@ if (_userModel != null) {
     );
   }
 
-  // verify otp code
   Future<void> verifyOTPCode({
     required String verificationId,
     required String otpCode,
@@ -156,54 +141,58 @@ if (_userModel != null) {
       smsCode: otpCode,
     );
 
-    await _auth.signInWithCredential(credential).then((value) async {
+    try {
+      final value = await _auth.signInWithCredential(credential);
       _uid = value.user!.uid;
       _phoneNumber = value.user!.phoneNumber;
       _isSuccessful = true;
       _isLoading = false;
       onSuccess();
       notifyListeners();
-    }).catchError((e) {
+    } catch (e) {
       _isSuccessful = false;
       _isLoading = false;
       notifyListeners();
       showSnackBar(context, e.toString());
-    });
+    }
   }
 
-  // save user data to firestore
+  Future<String> storeFileToStorage({
+    required File file,
+    required String reference,
+  }) async {
+    TaskSnapshot task = await _storage.ref(reference).putFile(file);
+    return await task.ref.getDownloadURL();
+  }
+
   void saveUserDataToFireStore({
     required UserModel userModel,
     required File? fileImage,
     required Function onSuccess,
-    required Function onFail,
+    required Function(String) onFail,
   }) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       if (fileImage != null) {
-        // upload image to storage
-        String imageUrl = await storeFileToStorage(
+        userModel = userModel.copyWith(
+          image: await storeFileToStorage(
             file: fileImage,
-            reference: '${Constants.userImages}/${userModel.uid}');
-
-        userModel.image = imageUrl;
+            reference: '${Constants.userImages}/${userModel.uid}',
+          ),
+        );
       }
 
-      userModel.lastSeen = DateTime.now().microsecondsSinceEpoch.toString();
-      userModel.createdAt = DateTime.now().microsecondsSinceEpoch.toString();
-
-      _userModel = userModel;
-      _uid = userModel.uid;
-
-      // save user data to firestore
       await _firestore
           .collection(Constants.users)
           .doc(userModel.uid)
           .set(userModel.toMap());
 
+      _userModel = userModel;
+      _uid = userModel.uid;
       _isLoading = false;
+      await saveUserDataToSharedPreferences();
       onSuccess();
       notifyListeners();
     } on FirebaseException catch (e) {
@@ -213,12 +202,46 @@ if (_userModel != null) {
     }
   }
 
-  // get user stream
+  Future<void> updateUserProfile({
+    required UserModel userModel,
+    required File? fileImage,
+    required Function onSuccess,
+    required Function(String) onFail,
+  }) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      if (fileImage != null) {
+        userModel = userModel.copyWith(
+          image: await storeFileToStorage(
+            file: fileImage,
+            reference: '${Constants.userImages}/${userModel.uid}',
+          ),
+        );
+      }
+
+      await _firestore
+          .collection(Constants.users)
+          .doc(userModel.uid)
+          .update(userModel.toMap());
+
+      _userModel = userModel;
+      _isLoading = false;
+      await saveUserDataToSharedPreferences();
+      onSuccess();
+      notifyListeners();
+    } on FirebaseException catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      onFail(e.toString());
+    }
+  }
+
   Stream<DocumentSnapshot> userStream({required String userID}) {
     return _firestore.collection(Constants.users).doc(userID).snapshots();
   }
 
-  // get all users stream
   Stream<QuerySnapshot> getAllUsersStream({required String userID}) {
     return _firestore
         .collection(Constants.users)
@@ -226,17 +249,11 @@ if (_userModel != null) {
         .snapshots();
   }
 
-  // send friend request
-  Future<void> sendFriendRequest({
-    required String friendID,
-  }) async {
+  Future<void> sendFriendRequest({required String friendID}) async {
     try {
-      // add our uid to friends request list
       await _firestore.collection(Constants.users).doc(friendID).update({
         Constants.friendRequestsUIDs: FieldValue.arrayUnion([_uid]),
       });
-
-      // add friend uid to our friend requests sent list
       await _firestore.collection(Constants.users).doc(_uid).update({
         Constants.sentFriendRequestsUIDs: FieldValue.arrayUnion([friendID]),
       });
@@ -245,16 +262,32 @@ if (_userModel != null) {
     }
   }
 
+  Future<void> logout() async {
+    await _auth.signOut();
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    await sharedPreferences.clear();
+    notifyListeners();
+  }
+
+  Future<void> removeFriend({required String friendID}) async {
+    try {
+      await _firestore.collection(Constants.users).doc(friendID).update({
+        Constants.friendsUIDs: FieldValue.arrayRemove([_uid]),
+      });
+      await _firestore.collection(Constants.users).doc(_uid).update({
+        Constants.friendsUIDs: FieldValue.arrayRemove([friendID]),
+      });
+    } on FirebaseException catch (e) {
+      print(e);
+    }
+  }
   Future<void> cancleFriendRequest({required String friendID}) async {
     try {
-      // remove our uid from friends request list
       await _firestore.collection(Constants.users).doc(friendID).update({
-        Constants.friendRequestsUIDs: FieldValue.arrayRemove([_uid]),
+        Constants.sentFriendRequestsUIDs: FieldValue.arrayRemove([_uid]),
       });
-
-      // remove friend uid from our friend requests sent list
       await _firestore.collection(Constants.users).doc(_uid).update({
-        Constants.sentFriendRequestsUIDs: FieldValue.arrayRemove([friendID]),
+        Constants.friendRequestsUIDs: FieldValue.arrayRemove([friendID]),
       });
     } on FirebaseException catch (e) {
       print(e);
@@ -262,141 +295,53 @@ if (_userModel != null) {
   }
 
   Future<void> acceptFriendRequest({required String friendID}) async {
-    // add our uid to friends list
-    await _firestore.collection(Constants.users).doc(friendID).update({
-      Constants.friendsUIDs: FieldValue.arrayUnion([_uid]),
-    });
-
-    // add friend uid to our friends list
-    await _firestore.collection(Constants.users).doc(_uid).update({
-      Constants.friendsUIDs: FieldValue.arrayUnion([friendID]),
-    });
-
-    // remove our uid from friends request list
-    await _firestore.collection(Constants.users).doc(friendID).update({
-      Constants.sentFriendRequestsUIDs: FieldValue.arrayRemove([_uid]),
-    });
-
-    // remove friend uid from our friend requests sent list
-    await _firestore.collection(Constants.users).doc(_uid).update({
-      Constants.friendRequestsUIDs: FieldValue.arrayRemove([friendID]),
-    });
-  }
-
-  // remove friend
-  Future<void> removeFriend({required String friendID}) async {
-    // remove our uid from friends list
-    await _firestore.collection(Constants.users).doc(friendID).update({
-      Constants.friendsUIDs: FieldValue.arrayRemove([_uid]),
-    });
-
-    // remove friend uid from our friends list
-    await _firestore.collection(Constants.users).doc(_uid).update({
-      Constants.friendsUIDs: FieldValue.arrayRemove([friendID]),
-    });
-  }
-
-  // get a list of friends
-  Future<List<UserModel>> getFriendsList(
-    String uid,
-    List<String> groupMembersUIDs,
-  ) async {
-    List<UserModel> friendsList = [];
-
-    DocumentSnapshot documentSnapshot =
-        await _firestore.collection(Constants.users).doc(uid).get();
-
-    List<dynamic> friendsUIDs = documentSnapshot.get(Constants.friendsUIDs);
-
-    for (String friendUID in friendsUIDs) {
-      // if groupMembersUIDs list is not empty and contains the friendUID we skip this friend
-      if (groupMembersUIDs.isNotEmpty && groupMembersUIDs.contains(friendUID)) {
-        continue;
-      }
-      DocumentSnapshot documentSnapshot =
-          await _firestore.collection(Constants.users).doc(friendUID).get();
-      UserModel friend =
-          UserModel.fromMap(documentSnapshot.data() as Map<String, dynamic>);
-      friendsList.add(friend);
-    }
-
-    return friendsList;
-  }
-
-  // get a list of friend requests
-  Future<List<UserModel>> getFriendRequestsList({
-    required String uid,
-    required String groupId,
-  }) async {
-    List<UserModel> friendRequestsList = [];
-
-    if (groupId.isNotEmpty) {
-      DocumentSnapshot documentSnapshot =
-          await _firestore.collection(Constants.groups).doc(groupId).get();
-
-      List<dynamic> requestsUIDs =
-          documentSnapshot.get(Constants.awaitingApprovalUIDs);
-
-      for (String friendRequestUID in requestsUIDs) {
-        DocumentSnapshot documentSnapshot = await _firestore
-            .collection(Constants.users)
-            .doc(friendRequestUID)
-            .get();
-        UserModel friendRequest =
-            UserModel.fromMap(documentSnapshot.data() as Map<String, dynamic>);
-        friendRequestsList.add(friendRequest);
-      }
-
-      return friendRequestsList;
-    }
-
-    DocumentSnapshot documentSnapshot =
-        await _firestore.collection(Constants.users).doc(uid).get();
-
-    List<dynamic> friendRequestsUIDs =
-        documentSnapshot.get(Constants.friendRequestsUIDs);
-
-    for (String friendRequestUID in friendRequestsUIDs) {
-      DocumentSnapshot documentSnapshot = await _firestore
-          .collection(Constants.users)
-          .doc(friendRequestUID)
-          .get();
-      UserModel friendRequest =
-          UserModel.fromMap(documentSnapshot.data() as Map<String, dynamic>);
-      friendRequestsList.add(friendRequest);
-    }
-
-    return friendRequestsList;
-  }
-
-  Future logout() async {
-    await _auth.signOut();
-    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    await sharedPreferences.clear();
-    notifyListeners();
-  }
-
-  Future<void> updateUserProfile(String uid, Map<String, dynamic> map, {File? fileImage}) async {
     try {
-      // If a new image is provided, upload it and update the image URL in the map
-      if (fileImage != null) {
-        String imageUrl = await storeFileToStorage(
-          file: fileImage,
-          reference: '${Constants.userImages}/$uid',
-        );
-        map['image'] = imageUrl;
-        // Also update the local userModel image if it exists
-        if (_userModel != null && _userModel!.uid == uid) {
-          _userModel!.image = imageUrl;
+      await _firestore.collection(Constants.users).doc(friendID).update({
+        Constants.friendsUIDs: FieldValue.arrayUnion([_uid]),
+        Constants.sentFriendRequestsUIDs: FieldValue.arrayRemove([_uid]),
+      });
+      await _firestore.collection(Constants.users).doc(_uid).update({
+        Constants.friendsUIDs: FieldValue.arrayUnion([friendID]),
+        Constants.friendRequestsUIDs: FieldValue.arrayRemove([friendID]),
+      });
+    } on FirebaseException catch (e) {
+      print(e);
+    }
+  }
+
+  Future<List<UserModel>> getFriendsList(String uid, List<String> groupMembersUIDs) async {
+    try {
+      List<UserModel> friends = [];
+      var userSnapshot = await _firestore.collection(Constants.users).doc(uid).get();
+      List<String> friendsUIDs = List<String>.from(userSnapshot.data()![Constants.friendsUIDs]);
+
+      for (String friendID in friendsUIDs) {
+        if (!groupMembersUIDs.contains(friendID)) {
+          var friendSnapshot = await _firestore.collection(Constants.users).doc(friendID).get();
+          friends.add(UserModel.fromMap(friendSnapshot.data()!));
         }
       }
-      await _firestore.collection(Constants.users).doc(uid).update(map);
-      await getUserDataFromFireStore();
-      // Save updated user data to shared preferences
-      await saveUserDataToSharedPreferences();
-      notifyListeners();
-    } on FirebaseException catch (e) {
-      print('Error updating user profile: $e');
+      return friends;
+    } catch (e) {
+      print(e);
+      return [];
+    }
+  }
+
+  Future<List<UserModel>> getFriendRequestsList({required String uid, required String groupId}) async {
+    try {
+      List<UserModel> friendRequests = [];
+      var userSnapshot = await _firestore.collection(Constants.users).doc(uid).get();
+      List<String> requestsUIDs = List<String>.from(userSnapshot.data()![Constants.friendRequestsUIDs]);
+
+      for (String requestID in requestsUIDs) {
+        var requestSnapshot = await _firestore.collection(Constants.users).doc(requestID).get();
+        friendRequests.add(UserModel.fromMap(requestSnapshot.data()!));
+      }
+      return friendRequests;
+    } catch (e) {
+      print(e);
+      return [];
     }
   }
 }

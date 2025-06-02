@@ -9,10 +9,7 @@ import 'package:clica/utilities/global_methods.dart';
 import 'package:clica/widgets/message_reply_preview.dart';
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_sound_record/flutter_sound_record.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 class BottomChatField extends StatefulWidget {
@@ -31,13 +28,11 @@ class BottomChatField extends StatefulWidget {
 }
 
 class _BottomChatFieldState extends State<BottomChatField> {
-  late final FlutterSoundRecord _soundRecord;
   late final TextEditingController _textEditingController;
   late final FocusNode _focusNode;
 
   String filePath = '';
   File? finalFileImage;
-  bool isRecording = false;
   bool isShowSendButton = false;
   bool isSendingAudio = false;
   bool isShowEmojiPicker = false;
@@ -45,40 +40,15 @@ class _BottomChatFieldState extends State<BottomChatField> {
   @override
   void initState() {
     super.initState();
-    _soundRecord = FlutterSoundRecord();
     _textEditingController = TextEditingController();
     _focusNode = FocusNode();
   }
 
   @override
   void dispose() {
-    _soundRecord.dispose();
     _textEditingController.dispose();
     _focusNode.dispose();
     super.dispose();
-  }
-
-  Future<bool> checkMicrophonePermission() async {
-    final status = await Permission.microphone.request();
-    return status == PermissionStatus.granted;
-  }
-
-  Future<void> startRecording() async {
-    if (await checkMicrophonePermission()) {
-      final tempDir = await getTemporaryDirectory();
-      filePath = '${tempDir.path}/flutter_sound.aac';
-      await _soundRecord.start(path: filePath);
-      setState(() => isRecording = true);
-    }
-  }
-
-  Future<void> stopRecording() async {
-    await _soundRecord.stop();
-    setState(() {
-      isRecording = false;
-      isSendingAudio = true;
-    });
-    sendFileMessage(messageType: MessageEnum.audio);
   }
 
   Future<void> selectImage(bool fromCamera) async {
@@ -129,7 +99,6 @@ class _BottomChatFieldState extends State<BottomChatField> {
       groupId: widget.groupId,
       onSucess: () {
         _textEditingController.clear();
-        // _focusNode.unfocus(); // Keep focus after sending
         setState(() => isSendingAudio = false);
       },
       onError: (error) {
@@ -151,7 +120,6 @@ class _BottomChatFieldState extends State<BottomChatField> {
       groupId: widget.groupId,
       onSucess: () {
         _textEditingController.clear();
-        // _focusNode.unfocus(); // Keep focus after sending
       },
       onError: (error) => showSnackBar(context, error),
     );
