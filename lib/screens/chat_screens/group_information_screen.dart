@@ -9,6 +9,8 @@ import 'package:clica/widgets/group_members_card.dart';
 import 'package:clica/widgets/settings_and_media.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 
 class GroupInformationScreen extends StatefulWidget {
   const GroupInformationScreen({super.key});
@@ -34,6 +36,13 @@ class _GroupInformationScreenState extends State<GroupInformationScreen> {
             }),
             centerTitle: true,
             title: const Text('Group Information'),
+            actions: [
+              if (isAdmin)
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () => _showEditGroupDialog(context, groupProvider),
+                ),
+            ],
           ),
           body: Padding(
             padding:
@@ -56,7 +65,6 @@ class _GroupInformationScreenState extends State<GroupInformationScreen> {
                   groupProvider: groupProvider,
                   isAdmin: isAdmin,
                   onPressed: () {
-                    // show  bottom sheet to add members
                     showAddMembersBottomSheet(
                       context: context,
                       groupMembersUIDs: groupProvider.groupModel.membersUIDs,
@@ -81,6 +89,114 @@ class _GroupInformationScreenState extends State<GroupInformationScreen> {
               ],
             )),
           ),
+        );
+      },
+    );
+  }
+
+  void _showEditGroupDialog(BuildContext context, GroupProvider groupProvider) {
+    final TextEditingController nameController = TextEditingController(
+      text: groupProvider.groupModel.groupName,
+    );
+    final TextEditingController descriptionController = TextEditingController(
+      text: groupProvider.groupModel.groupDescription,
+    );
+    Uint8List? newImage;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Edit Group Info'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () async {
+                        final file = await pickImage(
+                          context,
+                          fromCamera: false,
+                          onFail: (String error) {},
+                        );
+                        Uint8List? image;
+                        if (file != null) {
+                          image = await file.readAsBytes();
+                        }
+                        if (image != null) {
+                          setState(() => newImage = image);
+                        }
+                      },
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundImage: newImage != null
+                            ? MemoryImage(newImage!)
+                            : (groupProvider.groupModel.groupImage.isNotEmpty
+                                ? NetworkImage(
+                                    groupProvider.groupModel.groupImage)
+                                : const AssetImage('assets/default_group.png'))
+                                as ImageProvider,
+                        child: newImage == null &&
+                                groupProvider.groupModel.groupImage.isEmpty
+                            ? const Icon(Icons.group, size: 40)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Group Name',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: descriptionController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (nameController.text.trim().isEmpty) {
+                      showSnackBar(context, 'Group name cannot be empty');
+                      return;
+                    }
+
+                    try {
+                      await groupProvider.updateGroupInfo(
+                        name: nameController.text.trim(),
+                        description: descriptionController.text.trim(),
+                        imageBytes: newImage,
+                      );
+                      if (mounted) {
+                        Navigator.pop(context);
+                        showSnackBar(context, 'Group updated successfully');
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        showSnackBar(context, 'Failed to update group: $e');
+                      }
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

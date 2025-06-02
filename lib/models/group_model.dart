@@ -2,25 +2,25 @@ import 'package:clica/constants.dart';
 import 'package:clica/enums/enums.dart';
 
 class GroupModel {
-  String creatorUID;
-  String groupName;
-  String groupDescription;
-  String groupImage;
-  String groupId;
-  String lastMessage;
-  String senderUID;
-  MessageEnum messageType;
-  String messageId;
-  DateTime timeSent;
-  DateTime createdAt;
-  bool isPrivate;
-  bool editSettings;
-  bool approveMembers;
-  bool lockMessages;
-  bool requestToJoing;
-  List<String> membersUIDs;
-  List<String> adminsUIDs;
-  List<String> awaitingApprovalUIDs;
+  final String creatorUID;
+  final String groupName;
+  final String groupDescription;
+  final String groupImage;
+  final String groupId;
+  final String lastMessage;
+  final String senderUID;
+  final MessageEnum messageType;
+  final String messageId;
+  final DateTime timeSent;
+  final DateTime createdAt;
+  final bool isPrivate;
+  final bool editSettings;
+  final bool approveMembers;
+  final bool lockMessages;
+  final bool requestToJoing;
+  final List<String> membersUIDs;
+  final List<String> adminsUIDs;
+  final List<String> awaitingApprovalUIDs;
 
   GroupModel({
     required this.creatorUID,
@@ -44,7 +44,6 @@ class GroupModel {
     required this.awaitingApprovalUIDs,
   });
 
-  // to map
   Map<String, dynamic> toMap() {
     return {
       Constants.creatorUID: creatorUID,
@@ -69,7 +68,6 @@ class GroupModel {
     };
   }
 
-  // from map
   factory GroupModel.fromMap(Map<String, dynamic> map) {
     return GroupModel(
       creatorUID: map[Constants.creatorUID] ?? '',
@@ -79,7 +77,7 @@ class GroupModel {
       groupId: map[Constants.groupId] ?? '',
       lastMessage: map[Constants.lastMessage] ?? '',
       senderUID: map[Constants.senderUID] ?? '',
-      messageType: map[Constants.messageType].toString().toMessageEnum(),
+      messageType: (map[Constants.messageType] as String?)?.toMessageEnum() ?? MessageEnum.text,
       messageId: map[Constants.messageId] ?? '',
       timeSent: DateTime.fromMillisecondsSinceEpoch(
           map[Constants.timeSent] ?? DateTime.now().millisecondsSinceEpoch),
@@ -94,6 +92,50 @@ class GroupModel {
       adminsUIDs: List<String>.from(map[Constants.adminsUIDs] ?? []),
       awaitingApprovalUIDs:
           List<String>.from(map[Constants.awaitingApprovalUIDs] ?? []),
+    );
+  }
+
+  GroupModel copyWith({
+    String? creatorUID,
+    String? groupName,
+    String? groupDescription,
+    String? groupImage,
+    String? groupId,
+    String? lastMessage,
+    String? senderUID,
+    MessageEnum? messageType,
+    String? messageId,
+    DateTime? timeSent,
+    DateTime? createdAt,
+    bool? isPrivate,
+    bool? editSettings,
+    bool? approveMembers,
+    bool? lockMessages,
+    bool? requestToJoing,
+    List<String>? membersUIDs,
+    List<String>? adminsUIDs,
+    List<String>? awaitingApprovalUIDs,
+  }) {
+    return GroupModel(
+      creatorUID: creatorUID ?? this.creatorUID,
+      groupName: groupName ?? this.groupName,
+      groupDescription: groupDescription ?? this.groupDescription,
+      groupImage: groupImage ?? this.groupImage,
+      groupId: groupId ?? this.groupId,
+      lastMessage: lastMessage ?? this.lastMessage,
+      senderUID: senderUID ?? this.senderUID,
+      messageType: messageType ?? this.messageType,
+      messageId: messageId ?? this.messageId,
+      timeSent: timeSent ?? this.timeSent,
+      createdAt: createdAt ?? this.createdAt,
+      isPrivate: isPrivate ?? this.isPrivate,
+      editSettings: editSettings ?? this.editSettings,
+      approveMembers: approveMembers ?? this.approveMembers,
+      lockMessages: lockMessages ?? this.lockMessages,
+      requestToJoing: requestToJoing ?? this.requestToJoing,
+      membersUIDs: membersUIDs ?? this.membersUIDs,
+      adminsUIDs: adminsUIDs ?? this.adminsUIDs,
+      awaitingApprovalUIDs: awaitingApprovalUIDs ?? this.awaitingApprovalUIDs,
     );
   }
 }

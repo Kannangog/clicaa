@@ -1,7 +1,5 @@
-// ignore_for_file: avoid_print
-
 import 'dart:io';
-
+import 'dart:typed_data';
 import 'package:clica/enums/enums.dart';
 import 'package:clica/models/group_model.dart';
 import 'package:clica/models/message_model.dart';
@@ -9,16 +7,12 @@ import 'package:clica/models/user_model.dart';
 import 'package:clica/constants.dart';
 import 'package:clica/utilities/global_methods.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 class GroupProvider extends ChangeNotifier {
   bool _isSloading = false;
-  // bool _editSettings = true;
-  // bool _approveNewMembers = false;
-  // bool _requestToJoin = false;
-  // bool _lockMessages = false;
-
   GroupModel _groupModel = GroupModel(
     creatorUID: '',
     groupName: '',
@@ -43,87 +37,73 @@ class GroupProvider extends ChangeNotifier {
   final List<UserModel> _groupMembersList = [];
   final List<UserModel> _groupAdminsList = [];
 
-  // getters
   bool get isSloading => _isSloading;
-  // bool get editSettings => _editSettings;
-  // bool get approveNewMembers => _approveNewMembers;
-  // bool get requestToJoin => _requestToJoin;
-  // bool get lockMessages => _lockMessages;
   GroupModel get groupModel => _groupModel;
   List<UserModel> get groupMembersList => _groupMembersList;
   List<UserModel> get groupAdminsList => _groupAdminsList;
 
-  // firebase initialization
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // setters
   void setIsSloading({required bool value}) {
     _isSloading = value;
     notifyListeners();
   }
 
   void setEditSettings({required bool value}) {
-    _groupModel.editSettings = value;
+    _groupModel = _groupModel.copyWith(editSettings: value);
     notifyListeners();
-    // return if groupID is empty - meaning we are creating a new group
     if (_groupModel.groupId.isEmpty) return;
     updateGroupDataInFireStore();
   }
 
   void setApproveNewMembers({required bool value}) {
-    _groupModel.approveMembers = value;
+    _groupModel = _groupModel.copyWith(approveMembers: value);
     notifyListeners();
-    // return if groupID is empty - meaning we are creating a new group
     if (_groupModel.groupId.isEmpty) return;
     updateGroupDataInFireStore();
   }
 
   void setRequestToJoin({required bool value}) {
-    _groupModel.requestToJoing = value;
+    _groupModel = _groupModel.copyWith(requestToJoing: value);
     notifyListeners();
-    // return if groupID is empty - meaning we are creating a new group
     if (_groupModel.groupId.isEmpty) return;
     updateGroupDataInFireStore();
   }
 
   void setLockMessages({required bool value}) {
-    _groupModel.lockMessages = value;
+    _groupModel = _groupModel.copyWith(lockMessages: value);
     notifyListeners();
-    // return if groupID is empty - meaning we are creating a new group
     if (_groupModel.groupId.isEmpty) return;
     updateGroupDataInFireStore();
   }
 
-  // update group settings in firestore
   Future<void> updateGroupDataInFireStore() async {
     try {
       await _firestore
           .collection(Constants.groups)
           .doc(_groupModel.groupId)
-          .update(groupModel.toMap());
+          .update(_groupModel.toMap());
     } catch (e) {
       print(e.toString());
     }
   }
 
-  // add a group member
   void addMemberToGroup({required UserModel groupMember}) {
     _groupMembersList.add(groupMember);
-    _groupModel.membersUIDs.add(groupMember.uid);
+    _groupModel = _groupModel.copyWith(
+      membersUIDs: [..._groupModel.membersUIDs, groupMember.uid]
+    );
     notifyListeners();
-
-    // return if groupID is empty - meaning we are creating a new group
     if (_groupModel.groupId.isEmpty) return;
     updateGroupDataInFireStore();
   }
 
-  // add a member as an admin
   void addMemberToAdmins({required UserModel groupAdmin}) {
     _groupAdminsList.add(groupAdmin);
-    _groupModel.adminsUIDs.add(groupAdmin.uid);
+    _groupModel = _groupModel.copyWith(
+      adminsUIDs: [..._groupModel.adminsUIDs, groupAdmin.uid]
+    );
     notifyListeners();
-
-    // return if groupID is empty - meaning we are creating a new group
     if (_groupModel.groupId.isEmpty) return;
     updateGroupDataInFireStore();
   }
@@ -133,40 +113,40 @@ class GroupProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // remove member from group
   Future<void> removeGroupMember({required UserModel groupMember}) async {
     _groupMembersList.remove(groupMember);
-    // also remove this member from admins list if he is an admin
-    _groupAdminsList.remove(groupMember);
-    _groupModel.membersUIDs.remove(groupMember.uid);
+    _groupAdminsList.removeWhere((e) => e.uid == groupMember.uid);
+    
+    final newMembers = _groupModel.membersUIDs.where((uid) => uid != groupMember.uid).toList();
+    final newAdmins = _groupModel.adminsUIDs.where((uid) => uid != groupMember.uid).toList();
+    
+    _groupModel = _groupModel.copyWith(
+      membersUIDs: newMembers,
+      adminsUIDs: newAdmins,
+    );
+    
     notifyListeners();
-
-    // return if groupID is empty - meaning we are creating a new group
     if (_groupModel.groupId.isEmpty) return;
     updateGroupDataInFireStore();
   }
 
-  // remove admin from group
   void removeGroupAdmin({required UserModel groupAdmin}) {
     _groupAdminsList.remove(groupAdmin);
-    _groupModel.adminsUIDs.remove(groupAdmin.uid);
+    final newAdmins = _groupModel.adminsUIDs.where((uid) => uid != groupAdmin.uid).toList();
+    _groupModel = _groupModel.copyWith(adminsUIDs: newAdmins);
     notifyListeners();
-
-    // return if groupID is empty - meaning we are creating a new group
     if (_groupModel.groupId.isEmpty) return;
     updateGroupDataInFireStore();
   }
 
-  // get a list of goup members data from firestore
   Future<List<UserModel>> getGroupMembersDataFromFirestore({
     required bool isAdmin,
   }) async {
     try {
       List<UserModel> membersData = [];
-
-      // get the list of membersUIDs
-      List<String> membersUIDs =
-          isAdmin ? _groupModel.adminsUIDs : _groupModel.membersUIDs;
+      List<String> membersUIDs = isAdmin 
+          ? _groupModel.adminsUIDs 
+          : _groupModel.membersUIDs;
 
       for (var uid in membersUIDs) {
         var user = await _firestore.collection(Constants.users).doc(uid).get();
@@ -179,27 +159,22 @@ class GroupProvider extends ChangeNotifier {
     }
   }
 
-  // update the groupMembersList
   Future<void> updateGroupMembersList() async {
     _groupMembersList.clear();
-
-    _groupMembersList
-        .addAll(await getGroupMembersDataFromFirestore(isAdmin: false));
-
+    _groupMembersList.addAll(
+      await getGroupMembersDataFromFirestore(isAdmin: false)
+    );
     notifyListeners();
   }
 
-  // update the groupAdminsList
   Future<void> updateGroupAdminsList() async {
     _groupAdminsList.clear();
-
-    _groupAdminsList
-        .addAll(await getGroupMembersDataFromFirestore(isAdmin: true));
-
+    _groupAdminsList.addAll(
+      await getGroupMembersDataFromFirestore(isAdmin: true)
+    );
     notifyListeners();
   }
 
-  // clear group members list
   Future<void> clearGroupMembersList() async {
     _groupMembersList.clear();
     _groupAdminsList.clear();
@@ -227,28 +202,18 @@ class GroupProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // clear group admins list
-  // Future<void> clearGroupAdminsList() async {
-  //   _groupAdminsList.clear();
-  //   notifyListeners();
-  // }
-
-  // get a list UIDs from group members list
   List<String> getGroupMembersUIDs() {
     return _groupMembersList.map((e) => e.uid).toList();
   }
 
-  // get a list UIDs from group admins list
   List<String> getGroupAdminsUIDs() {
     return _groupAdminsList.map((e) => e.uid).toList();
   }
 
-  // stream group data
   Stream<DocumentSnapshot> groupStream({required String groupId}) {
     return _firestore.collection(Constants.groups).doc(groupId).snapshots();
   }
 
-  // stream users data from fireStore
   streamGroupMembersData({required List<String> membersUIDs}) {
     return Stream.fromFuture(Future.wait<DocumentSnapshot>(
       membersUIDs.map<Future<DocumentSnapshot>>((uid) async {
@@ -257,7 +222,6 @@ class GroupProvider extends ChangeNotifier {
     ));
   }
 
-  // create group
   Future<void> createGroup({
     required GroupModel newGroupModel,
     required File? fileImage,
@@ -268,52 +232,32 @@ class GroupProvider extends ChangeNotifier {
 
     try {
       var groupId = const Uuid().v4();
-      newGroupModel.groupId = groupId;
+      GroupModel updatedGroupModel = newGroupModel.copyWith(groupId: groupId);
 
-      // check if the file image is null
       if (fileImage != null) {
-        // upload image to firebase storage
         final String imageUrl = await storeFileToStorage(
             file: fileImage, reference: '${Constants.groupImages}/$groupId');
-        newGroupModel.groupImage = imageUrl;
+        updatedGroupModel = updatedGroupModel.copyWith(groupImage: imageUrl);
       }
 
-      // add the group admins
-      newGroupModel.adminsUIDs = [
-        newGroupModel.creatorUID,
-        ...getGroupAdminsUIDs()
-      ];
+      updatedGroupModel = updatedGroupModel.copyWith(
+        adminsUIDs: [
+          updatedGroupModel.creatorUID,
+          ...getGroupAdminsUIDs()
+        ],
+        membersUIDs: [
+          updatedGroupModel.creatorUID,
+          ...getGroupMembersUIDs()
+        ],
+      );
 
-      // add the group members
-      newGroupModel.membersUIDs = [
-        newGroupModel.creatorUID,
-        ...getGroupMembersUIDs()
-      ];
-
-      // update the global groupModel
-      setGroupModel(groupModel: newGroupModel);
-
-      // // add edit settings
-      // groupModel.editSettings = editSettings;
-
-      // // add approve new members
-      // groupModel.approveMembers = approveNewMembers;
-
-      // // add request to join
-      // groupModel.requestToJoing = requestToJoin;
-
-      // // add lock messages
-      // groupModel.lockMessages = lockMessages;
-
-      // add group to firebase
+      setGroupModel(groupModel: updatedGroupModel);
       await _firestore
           .collection(Constants.groups)
           .doc(groupId)
           .set(groupModel.toMap());
 
-      // set loading
       setIsSloading(value: false);
-      // set onSuccess
       onSuccess();
     } catch (e) {
       setIsSloading(value: false);
@@ -321,7 +265,6 @@ class GroupProvider extends ChangeNotifier {
     }
   }
 
-  // get a stream all private groups that contains the our userId
   Stream<List<GroupModel>> getPrivateGroupsStream({required String userId}) {
     return _firestore
         .collection(Constants.groups)
@@ -333,12 +276,10 @@ class GroupProvider extends ChangeNotifier {
       for (var group in event.docs) {
         groups.add(GroupModel.fromMap(group.data()));
       }
-
       return groups;
     });
   }
 
-  // get a stream all public groups that contains the our userId
   Stream<List<GroupModel>> getPublicGroupsStream({required String userId}) {
     return _firestore
         .collection(Constants.groups)
@@ -349,19 +290,16 @@ class GroupProvider extends ChangeNotifier {
       for (var group in event.docs) {
         groups.add(GroupModel.fromMap(group.data()));
       }
-
       return groups;
     });
   }
 
-  // change group type
   void changeGroupType() {
-    _groupModel.isPrivate = !_groupModel.isPrivate;
+    _groupModel = _groupModel.copyWith(isPrivate: !_groupModel.isPrivate);
     notifyListeners();
     updateGroupDataInFireStore();
   }
 
-  // send request to join group
   Future<void> sendRequestToJoinGroup({
     required String groupId,
     required String uid,
@@ -371,11 +309,8 @@ class GroupProvider extends ChangeNotifier {
     await _firestore.collection(Constants.groups).doc(groupId).update({
       Constants.awaitingApprovalUIDs: FieldValue.arrayUnion([uid])
     });
-
-    // TODO  send notification to group admins
   }
 
-  // accept request to join group
   Future<void> acceptRequestToJoinGroup({
     required String groupId,
     required String friendID,
@@ -385,27 +320,20 @@ class GroupProvider extends ChangeNotifier {
       Constants.awaitingApprovalUIDs: FieldValue.arrayRemove([friendID])
     });
 
-    _groupModel.awaitingApprovalUIDs.remove(friendID);
-    _groupModel.membersUIDs.add(friendID);
+    _groupModel = _groupModel.copyWith(
+      awaitingApprovalUIDs: _groupModel.awaitingApprovalUIDs.where((id) => id != friendID).toList(),
+      membersUIDs: [..._groupModel.membersUIDs, friendID],
+    );
     notifyListeners();
   }
 
-  // check if is sender or admin
   bool isSenderOrAdmin({required MessageModel message, required String uid}) {
-    if (message.senderUID == uid) {
-      return true;
-    } else if (_groupModel.adminsUIDs.contains(uid)) {
-      return true;
-    } else {
-      return false;
-    }
+    return message.senderUID == uid || _groupModel.adminsUIDs.contains(uid);
   }
 
-  // exit group
   Future<void> exitGroup({
     required String uid,
   }) async {
-    // check if the user is the admin of the group
     bool isAdmin = _groupModel.adminsUIDs.contains(uid);
 
     await _firestore
@@ -413,20 +341,62 @@ class GroupProvider extends ChangeNotifier {
         .doc(_groupModel.groupId)
         .update({
       Constants.membersUIDs: FieldValue.arrayRemove([uid]),
-      Constants.adminsUIDs:
-          isAdmin ? FieldValue.arrayRemove([uid]) : _groupModel.adminsUIDs,
+      Constants.adminsUIDs: isAdmin 
+          ? FieldValue.arrayRemove([uid]) 
+          : _groupModel.adminsUIDs,
     });
 
-    // remove the user from group members list
     _groupMembersList.removeWhere((element) => element.uid == uid);
-    // remove the user from group members uid
-    _groupModel.membersUIDs.remove(uid);
+    final newMembers = _groupModel.membersUIDs.where((id) => id != uid).toList();
+    
     if (isAdmin) {
-      // remove the user from group admins list
       _groupAdminsList.removeWhere((element) => element.uid == uid);
-      // remove the user from group admins uid
-      _groupModel.adminsUIDs.remove(uid);
+      final newAdmins = _groupModel.adminsUIDs.where((id) => id != uid).toList();
+      _groupModel = _groupModel.copyWith(
+        membersUIDs: newMembers,
+        adminsUIDs: newAdmins,
+      );
+    } else {
+      _groupModel = _groupModel.copyWith(membersUIDs: newMembers);
     }
+    
     notifyListeners();
+  }
+
+  Future<void> updateGroupInfo({
+    required String name,
+    required String description,
+    Uint8List? imageBytes,
+  }) async {
+    try {
+      String? imageUrl;
+      
+      if (imageBytes != null) {
+        final Reference ref = FirebaseStorage.instance
+            .ref()
+            .child('${Constants.groupImages}/${_groupModel.groupId}');
+        await ref.putData(imageBytes);
+        imageUrl = await ref.getDownloadURL();
+      }
+
+      _groupModel = _groupModel.copyWith(
+        groupName: name,
+        groupDescription: description,
+        groupImage: imageUrl ?? _groupModel.groupImage,
+      );
+
+      await _firestore
+          .collection(Constants.groups)
+          .doc(_groupModel.groupId)
+          .update({
+        Constants.groupName: name,
+        Constants.groupDescription: description,
+        if (imageUrl != null) Constants.groupImage: imageUrl,
+      });
+
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
   }
 }
