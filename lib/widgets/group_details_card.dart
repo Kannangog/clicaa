@@ -12,7 +12,7 @@ class InfoDetailsCard extends StatelessWidget {
     super.key,
     this.groupProvider,
     this.isAdmin,
-    this.userModel,
+    this.userModel, required void Function() onEditPressed,
   });
 
   final GroupProvider? groupProvider;

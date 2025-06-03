@@ -42,7 +42,7 @@ class ExitGroupCard extends StatelessWidget {
                 }
               },
             );
-          },
+          }, textColor: Colors.red,
         ),
       ),
     );

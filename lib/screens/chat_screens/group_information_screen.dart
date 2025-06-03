@@ -54,11 +54,13 @@ class _GroupInformationScreenState extends State<GroupInformationScreen> {
                 InfoDetailsCard(
                   groupProvider: groupProvider,
                   isAdmin: isAdmin,
+                  onEditPressed: isAdmin ? () => _showEditGroupDialog(context, groupProvider) : () {},
                 ),
                 const SizedBox(height: 10),
                 SettingsAndMedia(
                   groupProvider: groupProvider,
                   isAdmin: isAdmin,
+                  onDeletePressed: isAdmin ? () => _showDeleteGroupDialog(context, groupProvider) : null,
                 ),
                 const SizedBox(height: 20),
                 AddMembers(
@@ -197,6 +199,44 @@ class _GroupInformationScreenState extends State<GroupInformationScreen> {
               ],
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showDeleteGroupDialog(BuildContext context, GroupProvider groupProvider) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Group'),
+          content: const Text('Are you sure you want to delete this group? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+              ),
+              onPressed: () async {
+                try {
+                  await groupProvider.deleteGroup();
+                  if (mounted) {
+                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(context); // Go back to previous screen
+                    showSnackBar(context, 'Group deleted successfully');
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    showSnackBar(context, 'Failed to delete group: $e');
+                  }
+                }
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            ),
+          ],
         );
       },
     );

@@ -28,10 +28,11 @@ class AuthenticationProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  Future<bool> checkAuthenticationState() async {
-    bool isSignedIn = false;
-    await Future.delayed(const Duration(seconds: 2));
+Future<bool> checkAuthenticationState() async {
+  bool isSignedIn = false;
+  await Future.delayed(const Duration(seconds: 2));
 
+  try {
     if (_auth.currentUser != null) {
       _uid = _auth.currentUser!.uid;
       await getUserDataFromFireStore();
@@ -39,10 +40,16 @@ class AuthenticationProvider extends ChangeNotifier {
       notifyListeners();
       isSignedIn = true;
     } else {
-      isSignedIn = false;
+      // Try to get user data from shared preferences if auth is null
+      await getUserDataFromSharedPreferences();
+      isSignedIn = _userModel != null;
     }
-    return isSignedIn;
+  } catch (e) {
+    print('Error checking authentication state: $e');
+    isSignedIn = false;
   }
+  return isSignedIn;
+}
 
   Future<bool> checkUserExists() async {
     DocumentSnapshot documentSnapshot =

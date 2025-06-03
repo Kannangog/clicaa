@@ -138,4 +138,28 @@ class GroupModel {
       awaitingApprovalUIDs: awaitingApprovalUIDs ?? this.awaitingApprovalUIDs,
     );
   }
+
+  static GroupModel empty() {
+    return GroupModel(
+      creatorUID: '',
+      groupName: '',
+      groupDescription: '',
+      groupImage: '',
+      groupId: '',
+      lastMessage: '',
+      senderUID: '',
+      messageType: MessageEnum.text,
+      messageId: '',
+      timeSent: DateTime.fromMillisecondsSinceEpoch(0),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      isPrivate: false,
+      editSettings: false,
+      approveMembers: false,
+      lockMessages: false,
+      requestToJoing: false,
+      membersUIDs: [],
+      adminsUIDs: [],
+      awaitingApprovalUIDs: [],
+    );
+  }
 }

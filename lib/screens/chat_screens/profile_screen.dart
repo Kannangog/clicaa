@@ -86,7 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   InfoDetailsCard(
-                    userModel: userModel,
+                    userModel: userModel, onEditPressed: () {  },
                   ),
                   const SizedBox(height: 10),
                   Padding(

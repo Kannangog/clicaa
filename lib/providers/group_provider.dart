@@ -84,7 +84,7 @@ class GroupProvider extends ChangeNotifier {
           .doc(_groupModel.groupId)
           .update(_groupModel.toMap());
     } catch (e) {
-      print(e.toString());
+      debugPrint('Error updating group data: ${e.toString()}');
     }
   }
 
@@ -110,6 +110,8 @@ class GroupProvider extends ChangeNotifier {
 
   Future<void> setGroupModel({required GroupModel groupModel}) async {
     _groupModel = groupModel;
+    await updateGroupMembersList();
+    await updateGroupAdminsList();
     notifyListeners();
   }
 
@@ -150,29 +152,40 @@ class GroupProvider extends ChangeNotifier {
 
       for (var uid in membersUIDs) {
         var user = await _firestore.collection(Constants.users).doc(uid).get();
-        membersData.add(UserModel.fromMap(user.data()!));
+        if (user.exists) {
+          membersData.add(UserModel.fromMap(user.data()!));
+        }
       }
 
       return membersData;
     } catch (e) {
+      debugPrint('Error getting group members: ${e.toString()}');
       return [];
     }
   }
 
   Future<void> updateGroupMembersList() async {
-    _groupMembersList.clear();
-    _groupMembersList.addAll(
-      await getGroupMembersDataFromFirestore(isAdmin: false)
-    );
-    notifyListeners();
+    try {
+      _groupMembersList.clear();
+      _groupMembersList.addAll(
+        await getGroupMembersDataFromFirestore(isAdmin: false)
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating members list: ${e.toString()}');
+    }
   }
 
   Future<void> updateGroupAdminsList() async {
-    _groupAdminsList.clear();
-    _groupAdminsList.addAll(
-      await getGroupMembersDataFromFirestore(isAdmin: true)
-    );
-    notifyListeners();
+    try {
+      _groupAdminsList.clear();
+      _groupAdminsList.addAll(
+        await getGroupMembersDataFromFirestore(isAdmin: true)
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating admins list: ${e.toString()}');
+    }
   }
 
   Future<void> clearGroupMembersList() async {
@@ -214,7 +227,7 @@ class GroupProvider extends ChangeNotifier {
     return _firestore.collection(Constants.groups).doc(groupId).snapshots();
   }
 
-  streamGroupMembersData({required List<String> membersUIDs}) {
+  Stream<List<DocumentSnapshot>> streamGroupMembersData({required List<String> membersUIDs}) {
     return Stream.fromFuture(Future.wait<DocumentSnapshot>(
       membersUIDs.map<Future<DocumentSnapshot>>((uid) async {
         return await _firestore.collection(Constants.users).doc(uid).get();
@@ -255,7 +268,7 @@ class GroupProvider extends ChangeNotifier {
       await _firestore
           .collection(Constants.groups)
           .doc(groupId)
-          .set(groupModel.toMap());
+          .set(updatedGroupModel.toMap());
 
       setIsSloading(value: false);
       onSuccess();
@@ -306,25 +319,35 @@ class GroupProvider extends ChangeNotifier {
     required String groupName,
     required String groupImage,
   }) async {
-    await _firestore.collection(Constants.groups).doc(groupId).update({
-      Constants.awaitingApprovalUIDs: FieldValue.arrayUnion([uid])
-    });
+    try {
+      await _firestore.collection(Constants.groups).doc(groupId).update({
+        Constants.awaitingApprovalUIDs: FieldValue.arrayUnion([uid])
+      });
+    } catch (e) {
+      debugPrint('Error sending join request: ${e.toString()}');
+      rethrow;
+    }
   }
 
   Future<void> acceptRequestToJoinGroup({
     required String groupId,
     required String friendID,
   }) async {
-    await _firestore.collection(Constants.groups).doc(groupId).update({
-      Constants.membersUIDs: FieldValue.arrayUnion([friendID]),
-      Constants.awaitingApprovalUIDs: FieldValue.arrayRemove([friendID])
-    });
+    try {
+      await _firestore.collection(Constants.groups).doc(groupId).update({
+        Constants.membersUIDs: FieldValue.arrayUnion([friendID]),
+        Constants.awaitingApprovalUIDs: FieldValue.arrayRemove([friendID])
+      });
 
-    _groupModel = _groupModel.copyWith(
-      awaitingApprovalUIDs: _groupModel.awaitingApprovalUIDs.where((id) => id != friendID).toList(),
-      membersUIDs: [..._groupModel.membersUIDs, friendID],
-    );
-    notifyListeners();
+      _groupModel = _groupModel.copyWith(
+        awaitingApprovalUIDs: _groupModel.awaitingApprovalUIDs.where((id) => id != friendID).toList(),
+        membersUIDs: [..._groupModel.membersUIDs, friendID],
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error accepting join request: ${e.toString()}');
+      rethrow;
+    }
   }
 
   bool isSenderOrAdmin({required MessageModel message, required String uid}) {
@@ -334,33 +357,38 @@ class GroupProvider extends ChangeNotifier {
   Future<void> exitGroup({
     required String uid,
   }) async {
-    bool isAdmin = _groupModel.adminsUIDs.contains(uid);
+    try {
+      bool isAdmin = _groupModel.adminsUIDs.contains(uid);
 
-    await _firestore
-        .collection(Constants.groups)
-        .doc(_groupModel.groupId)
-        .update({
-      Constants.membersUIDs: FieldValue.arrayRemove([uid]),
-      Constants.adminsUIDs: isAdmin 
-          ? FieldValue.arrayRemove([uid]) 
-          : _groupModel.adminsUIDs,
-    });
+      await _firestore
+          .collection(Constants.groups)
+          .doc(_groupModel.groupId)
+          .update({
+        Constants.membersUIDs: FieldValue.arrayRemove([uid]),
+        Constants.adminsUIDs: isAdmin 
+            ? FieldValue.arrayRemove([uid]) 
+            : _groupModel.adminsUIDs,
+      });
 
-    _groupMembersList.removeWhere((element) => element.uid == uid);
-    final newMembers = _groupModel.membersUIDs.where((id) => id != uid).toList();
-    
-    if (isAdmin) {
-      _groupAdminsList.removeWhere((element) => element.uid == uid);
-      final newAdmins = _groupModel.adminsUIDs.where((id) => id != uid).toList();
-      _groupModel = _groupModel.copyWith(
-        membersUIDs: newMembers,
-        adminsUIDs: newAdmins,
-      );
-    } else {
-      _groupModel = _groupModel.copyWith(membersUIDs: newMembers);
+      _groupMembersList.removeWhere((element) => element.uid == uid);
+      final newMembers = _groupModel.membersUIDs.where((id) => id != uid).toList();
+      
+      if (isAdmin) {
+        _groupAdminsList.removeWhere((element) => element.uid == uid);
+        final newAdmins = _groupModel.adminsUIDs.where((id) => id != uid).toList();
+        _groupModel = _groupModel.copyWith(
+          membersUIDs: newMembers,
+          adminsUIDs: newAdmins,
+        );
+      } else {
+        _groupModel = _groupModel.copyWith(membersUIDs: newMembers);
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error exiting group: ${e.toString()}');
+      rethrow;
     }
-    
-    notifyListeners();
   }
 
   Future<void> updateGroupInfo({
@@ -396,6 +424,65 @@ class GroupProvider extends ChangeNotifier {
 
       notifyListeners();
     } catch (e) {
+      debugPrint('Error updating group info: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteGroup() async {
+    try {
+      // First verify we have a valid group ID
+      if (_groupModel.groupId.isEmpty) {
+        throw Exception('Cannot delete group - no group ID set');
+      }
+
+      // Store group ID and image locally since we'll clear the model
+      final groupId = _groupModel.groupId;
+      final groupImage = _groupModel.groupImage;
+
+      // Delete all messages
+      final messagesQuery = await _firestore
+          .collection(Constants.groups)
+          .doc(groupId)
+          .collection(Constants.messages)
+          .get();
+
+      final messageDeletions = messagesQuery.docs.map((doc) => doc.reference.delete());
+      await Future.wait(messageDeletions);
+
+      // Delete all requests (if this collection exists)
+      try {
+        final requestsQuery = await _firestore
+            .collection(Constants.groups)
+            .doc(groupId)
+            .collection(Constants.requests)
+            .get();
+
+        final requestDeletions = requestsQuery.docs.map((doc) => doc.reference.delete());
+        await Future.wait(requestDeletions);
+      } catch (e) {
+        debugPrint('No requests collection to delete: ${e.toString()}');
+      }
+
+      // Delete group image if it exists
+      if (groupImage.isNotEmpty) {
+        try {
+          final Reference ref = FirebaseStorage.instance.refFromURL(groupImage);
+          await ref.delete();
+        } catch (e) {
+          debugPrint('Failed to delete group image: ${e.toString()}');
+        }
+      }
+
+      // Finally delete the group document
+      await _firestore.collection(Constants.groups).doc(groupId).delete();
+
+      // Clear local state
+      clearGroupMembersList();
+      notifyListeners();
+
+    } catch (e) {
+      debugPrint('Failed to delete group: ${e.toString()}');
       rethrow;
     }
   }

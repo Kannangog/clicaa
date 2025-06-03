@@ -85,4 +85,6 @@ class Constants {
   static const String groupImages = 'groupImages';
 
   static var profileimage;
+
+  static String requests = '';
 }

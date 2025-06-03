@@ -9,10 +9,12 @@ class SettingsAndMedia extends StatelessWidget {
     super.key,
     required this.groupProvider,
     required this.isAdmin,
+    required this.onDeletePressed,
   });
 
   final GroupProvider groupProvider;
   final bool isAdmin;
+  final VoidCallback? onDeletePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -34,16 +36,14 @@ class SettingsAndMedia extends StatelessWidget {
               color: Colors.grey,
             ),
             SettingsListTile(
-              title: 'Group Seetings',
+              title: 'Group Settings',
               icon: Icons.settings,
               iconContainerColor: Colors.deepPurple,
               onTap: () {
                 if (!isAdmin) {
-                  // show snackbar
                   showSnackBar(context, 'Only admin can change group settings');
                 } else {
                   groupProvider.updateGroupAdminsList().whenComplete(() {
-                    // navigate to group settings screen
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => const GroupSettingsScreen(),
@@ -53,6 +53,23 @@ class SettingsAndMedia extends StatelessWidget {
                 }
               },
             ),
+            if (isAdmin && onDeletePressed != null) ...[
+              const Divider(
+                thickness: 0.5,
+                color: Colors.grey,
+              ),
+              SettingsListTile(
+                title: 'Delete Group',
+                icon: Icons.delete,
+                iconContainerColor: Colors.red,
+                textColor: Colors.red,
+                onTap: () {
+                  if (onDeletePressed != null) {
+                    onDeletePressed!();
+                  }
+                },
+              ),
+            ],
           ],
         ),
       ),

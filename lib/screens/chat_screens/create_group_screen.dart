@@ -254,6 +254,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     title: 'Group Settings',
                     icon: Icons.settings,
                     iconContainerColor: Colors.deepPurple,
+                    textColor: Colors.black, // Add the required textColor argument
                     onTap: () {
                       // navigate to group settings screen
                       Navigator.pushNamed(

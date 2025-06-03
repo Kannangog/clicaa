@@ -10,6 +10,7 @@ class SettingsListTile extends StatelessWidget {
     required this.icon,
     required this.iconContainerColor,
     required this.onTap,
+    this.textColor,
   });
 
   final String title;
@@ -17,6 +18,7 @@ class SettingsListTile extends StatelessWidget {
   final IconData icon;
   final Color iconContainerColor;
   final Function() onTap;
+  final Color? textColor;
 
   @override
   Widget build(BuildContext context) {
@@ -35,16 +37,21 @@ class SettingsListTile extends StatelessWidget {
           ),
         ),
       ),
-      title: Text(title),
+      title: Text(
+        title,
+        style: textColor != null ? TextStyle(color: textColor) : null,
+      ),
       subtitle: subtitle != null
           ? Text(
               subtitle!,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
+              style: textColor != null ? TextStyle(color: textColor) : null,
             )
           : null,
       trailing: Icon(
         Platform.isAndroid ? Icons.arrow_forward : Icons.arrow_back_ios_new,
+        color: textColor,
       ),
       onTap: onTap,
     );

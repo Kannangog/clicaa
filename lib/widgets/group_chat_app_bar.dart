@@ -32,8 +32,12 @@ class _GroupChatAppBarState extends State<GroupChatAppBar> {
           return const Center(child: CircularProgressIndicator());
         }
 
+        final data = snapshot.data!.data();
+        if (data == null) {
+          return const Center(child: Text('Group not found'));
+        }
         final groupModel =
-            GroupModel.fromMap(snapshot.data!.data() as Map<String, dynamic>);
+            GroupModel.fromMap(data as Map<String, dynamic>);
 
         return GestureDetector(
           onTap: () {
