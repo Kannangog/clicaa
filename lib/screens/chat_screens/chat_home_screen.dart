@@ -69,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen>
     final authProvider = context.watch<AuthenticationProvider>();
     return Scaffold(
       appBar: AppBar(
-      title: const Text('Clica'),
+      title: const Text('Clickup'),
       actions: [
         Padding(
         padding: const EdgeInsets.all(8.0),

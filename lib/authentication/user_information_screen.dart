@@ -219,7 +219,7 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
       final updatedUser = userModel.copyWith(
         name: _nameController.text.trim(),
         aboutMe: _aboutMeController.text.trim().isEmpty
-            ? 'Hey there, I\'m using clica'
+            ? 'Hey there, I\'m using clickup'
             : _aboutMeController.text.trim(),
       );
 
